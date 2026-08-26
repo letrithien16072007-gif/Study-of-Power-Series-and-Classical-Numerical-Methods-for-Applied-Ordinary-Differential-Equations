@@ -1,0 +1,1 @@
+# Study-of-Power-Series-and-Classical-Numerical-Methods-for-Applied-Ordinary-Differential-Equations
