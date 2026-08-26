@@ -1,0 +1,1235 @@
+%% ================================================================
+%%  A Comparative Study of Power Series and Classical Numerical
+%%  Methods for Applied Ordinary Differential Equations:
+%%  Extended Analysis with Padé Rational Approximants
+%%
+%%  Compile sequence (Overleaf / local TeX Live 2020+):
+%%    pdflatex  ->  pdflatex  (bibliography is embedded)
+%%
+%%  Target journal style: Applied Mathematics and Computation
+%%  (Elsevier) — uses \documentclass{article} + standard packages
+%% ================================================================
+\documentclass[12pt,a4paper]{article}
+
+%% ── Core packages ──────────────────────────────────────────────
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[margin=2.54cm]{geometry}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{mathtools}
+\usepackage{bm}
+
+%% ── Tables & figures ───────────────────────────────────────────
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{multirow}
+\usepackage[table]{xcolor}
+\usepackage{graphicx}
+%\usepackage{caption}
+%\usepackage{subcaption}
+\usepackage{float}
+
+%% ── Lists & algorithms ─────────────────────────────────────────
+%\usepackage{enumitem}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+
+%% ── Typography ─────────────────────────────────────────────────
+%\usepackage{setspace}
+%\usepackage{parskip}
+\setlength{\parskip}{6pt}
+\setlength{\parindent}{0pt}
+
+%% ── Hyperlinks ─────────────────────────────────────────────────
+\usepackage[colorlinks=true,
+            linkcolor=blue!60!black,
+            citecolor=green!45!black,
+            urlcolor=cyan!60!black,
+            pdfborder={0 0 0}]{hyperref}
+%\usepackage{cleveref}
+
+%% ── Custom colours ─────────────────────────────────────────────
+\definecolor{goodcell}{HTML}{C6EFCE}
+\definecolor{warncell}{HTML}{FFEB9C}
+\definecolor{badcell} {HTML}{FFC7CE}
+\definecolor{infocell}{HTML}{DDEEFF}
+
+%% ── Theorem-like environments ──────────────────────────────────
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{proposition}[theorem]{Proposition}
+\newtheorem{corollary}[theorem]{Corollary}
+\newtheorem{lemma}[theorem]{Lemma}
+\theoremstyle{definition}
+\newtheorem{definition}[theorem]{Definition}
+\newtheorem{example}[theorem]{Example}
+\theoremstyle{remark}
+\newtheorem{remark}[theorem]{Remark}
+
+%% ── Macros ─────────────────────────────────────────────────────
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\C}{\mathbb{C}}
+\newcommand{\Rconv}{R_{\mathrm{conv}}}
+\newcommand{\xp}{x_{\mathrm{p}}}
+\newcommand{\OO}{\mathcal{O}}
+\newcommand{\abs}[1]{\left\lvert #1 \right\rvert}
+\newcommand{\norm}[1]{\left\lVert #1 \right\rVert}
+\newcommand{\dd}{\mathrm{d}}
+\newcommand{\eg}{e.g.,\xspace}
+\newcommand{\ie}{i.e.,\xspace}
+
+%% ================================================================
+\begin{document}
+
+%% ── Title block ────────────────────────────────────────────────
+\begin{center}
+  {\LARGE\bfseries
+    A Comparative Study of Power Series and Classical\\[4pt]
+   Numerical Methods for Applied\\[4pt]
+   Ordinary Differential Equations:\\[6pt]
+   \large\itshape
+   Extended Analysis with Padé Rational Approximants\\
+   for Convergence-Radius Extension}
+
+  \vspace{18pt}
+
+  {\large
+    Le Tri Thien$^{\ast}$\quad Nguyen Van Phu$^{\dagger}$}
+
+  \vspace{8pt}
+
+  {\normalsize
+    $^{1}$Department of Mathematics, FPT University,
+    Ho Chi Minh City, Vietnam}
+
+  \vspace{4pt}
+
+  {\small
+    ${}^{\ast}$\textit{Corresponding author.}
+    E-mail: \texttt{ThienLTSE210312@fpt.edu.vn}\\[2pt]
+    ${}^{\dagger}$E-mail: \texttt{PhuNVSE210043@fpt.edu.vn}}
+
+  \vspace{10pt}
+  {\small July 2026}
+\end{center}
+
+\hrule height 0.8pt
+\vspace{10pt}
+
+%% ── Abstract ───────────────────────────────────────────────────
+\begin{abstract}
+\noindent
+Ordinary differential equations (ODEs) are fundamental tools for
+modelling complex phenomena in science and engineering.  This paper
+investigates the power series method for constructing approximate
+analytical solutions and compares its performance with the Euler
+method and the fourth-order Runge--Kutta (RK4) method across three
+representative physical systems: Newton's Law of Cooling (linear,
+constant coefficients), the Airy equation (linear, variable
+coefficients), and the logistic growth model (nonlinear,
+Riccati-type).  Recurrence relations for the series coefficients are
+derived for each system, and numerical experiments are implemented in
+C (compiled with \texttt{-O2}) for execution-time benchmarks averaged
+over $10{,}000$~runs.  A 20-term power series achieves an absolute
+error of $3.0 \times 10^{-10}$ for Newton's Law of Cooling, matching
+RK4 precision at $6\times$--$40\times$ less computation time per
+sparse evaluation.  The series diverges catastrophically for the
+logistic model at $x = 5.0$ (error $> 11{,}000$), and a
+complex-plane analysis reveals a finite convergence radius
+$\Rconv \approx 3.83$ governed by the nearest singularity
+$\xp = \ln 9 + i\pi$.
+
+\smallskip
+\textbf{Extended contribution.}  We address the open problem of
+selecting the Padé approximant order $[L/M]$ from the known
+singularity structure of the solution.  Through six targeted
+numerical experiments, we (a)~prove and verify experimentally that
+$M \geq 2$ is necessary for the logistic model (one complex conjugate
+pole pair), (b)~derive a closed-form expansion-point shift condition
+$x_0 > 1.838$ guaranteeing convergence at $x_{\mathrm{eval}} = 5.0$,
+(c)~show that shifting the expansion point from $x_0 = 0$ to
+$x_0 = 3.0$ reduces the Padé $[3/3]$ error from $11.34$ to $0.008$
+(a factor of $1{,}422$), and (d)~construct a work-precision diagram
+demonstrating that while the Taylor series diverges outside the convergence radius
+($N = 12$ yielding an error of $906.1$), the diagonal Padé $[6/6]$
+(which consumes the same 13 Taylor coefficients) successfully resolves the solution
+with an absolute error of $1.85 \times 10^{-3}$.  Froissart doublets are identified as the source of
+anomalous deterioration in certain $[L/M]$ combinations.
+
+\smallskip\noindent
+\textbf{Keywords:} ordinary differential equations;
+power series method; Euler method; Runge--Kutta method;
+Padé approximants; convergence radius; complex singularity;
+Froissart doublets; work-precision analysis.
+
+\smallskip\noindent
+\textbf{MSC 2020:} 34A12 \textperiodcentered{} 65L05
+\textperiodcentered{} 41A21 \textperiodcentered{} 41A58.
+\end{abstract}
+
+\vspace{6pt}
+\hrule height 0.4pt
+\vspace{10pt}
+
+\tableofcontents
+\newpage
+
+%% ================================================================
+\section{Introduction}
+\label{sec:intro}
+%% ================================================================
+
+Ordinary differential equations (ODEs) are central to the
+mathematical modelling of dynamical systems in physics, biology, and
+engineering.  Since many practical ODEs are nonlinear or have
+variable coefficients, exact closed-form solutions are generally
+unavailable, and one must resort to analytical approximations or
+numerical discretisation~\cite{boyce2017,coddington1955}.
+
+The \emph{power series method} provides an elegant local analytical
+framework: if the right-hand side is analytic near an initial point
+$x_0$, one assumes a solution of the form
+$y(x) = \sum_{n=0}^{\infty} a_n (x - x_0)^n$ and determines the
+coefficients $a_n$ recursively~\cite{boyce2017}.  The approximation
+is highly accurate within the radius of convergence~$\Rconv$ but
+breaks down outside it.
+
+On the other hand, \emph{discrete numerical solvers}---originating
+with Euler~\cite{euler1768} and later refined by Runge~\cite{runge1895}
+and Kutta~\cite{kutta1901}---advance the solution step by step along
+the real axis and are not constrained by the complex-analytic
+structure of the solution.  Modern theoretical foundations and
+practical guidance are provided in Hairer et~al.~\cite{hairer1993},
+Butcher~\cite{butcher2016}, and Lambert~\cite{lambert1991}.
+
+\subsection{Related Work}
+
+Taylor/power series as computational ODE solvers have a rich
+history.  Barton et~al.~\cite{barton1971} and Corliss and Chang~\cite{corliss1982} demonstrated that
+automatic differentiation generates Taylor coefficients efficiently,
+achieving competitive accuracy with Runge--Kutta solvers for certain
+problem classes.  Barrio~\cite{barrio2005} conducted systematic
+benchmarks showing that high-order Taylor methods can outperform RK4
+for problems requiring very high precision.  The existence and
+uniqueness theory was established by Picard~\cite{picard1890} and
+Lindelöf~\cite{lindelof1894}; the algebraic analysis of Runge--Kutta
+processes is due to Butcher~\cite{butcher1963,butcher1964}; and a
+modern unified treatment appears in Teschl~\cite{teschl2012}.
+
+Regarding \emph{Padé approximants}, the standard reference for
+theory and applications is Baker and
+Graves-Morris~\cite{baker1996}.  A central practical obstacle is the
+appearance of spurious pole-zero cancellations known as
+\emph{Froissart doublets}; the singular-value-decomposition (SVD)
+based robust construction of Gonnet, Güttel, and
+Trefethen~\cite{gonnet2013} addresses this issue systematically.
+
+While earlier studies examine power series or numerical methods in
+isolation, few provide a direct empirical comparison across multiple
+problem types that simultaneously highlights (i)~the role of
+complex-plane singularities in limiting series convergence for
+nonlinear problems and (ii)~how Padé rational approximants can
+systematically extend the convergence domain.  The present work aims
+to fill this gap.
+
+\subsection{Contributions}
+
+The primary contributions of this paper focus on addressing the breakdown of polynomial approximations outside their convergence domain and establishing rational Padé approximants as a systematic domain extension framework, supported by empirical C language verification:
+\begin{enumerate}
+  \item \textbf{Analytical Limit Identification:} Derivation of exact recurrence relations for three representative ODE classes (linear constant-coefficient, linear variable-coefficient, nonlinear Riccati-type), accompanied by a complex-plane singularity analysis for the logistic model explaining the catastrophic divergence of Taylor series past $\Rconv = \sqrt{\ln^2 9 + \pi^2} \approx 3.83$.
+  \item \textbf{Rational Convergence Extension \& Order Selection Rule:} Analytical proof and experimental validation that a minimum denominator degree $M \geq 2$ is strictly required for Padé approximants in systems with complex conjugate pole pairs, together with a closed-form expansion-point shift condition ($x_0 > 1.838$) and a work-precision evaluation demonstrating convergence recovery outside $\Rconv$.
+  \item \textbf{Practical Order Selection Algorithm:} Proposal and algorithmic formulation of an automated decision procedure (Algorithm~\ref{alg:pade}) that dynamically determines the optimal expansion strategy and Padé order $[L/M]$ based on the local complex singularity structure.
+  \item \textbf{Software Verification and Benchmarking in C:} Development of a self-contained C language benchmark suite (\texttt{gcc -O2}) to empirically measure execution timing across $10{,}000$ runs, verify experimental orders of convergence (EOC) for Euler and RK4 solvers, and validate the computational efficiency of local Padé approximants.
+\end{enumerate}
+
+\subsection{Paper Organisation}
+
+Section~\ref{sec:prelim} reviews mathematical foundations.
+Section~\ref{sec:methods} formulates algorithms and derives
+recurrence coefficients.
+Section~\ref{sec:results} presents numerical results and benchmarks.
+Section~\ref{sec:analysis} contains the comparative analysis.
+Section~\ref{sec:pade} presents the extended Padé contribution.
+Section~\ref{sec:conclusion} summarises conclusions and future work.
+
+%% ================================================================
+\section{Mathematical Preliminaries}
+\label{sec:prelim}
+%% ================================================================
+
+\subsection{Existence and Uniqueness}
+
+Consider the first-order initial value problem (IVP):
+\begin{equation}
+  y' = f(x, y), \qquad y(x_0) = y_0,
+  \label{eq:ivp}
+\end{equation}
+where $f: D \subset \R^2 \to \R$.
+
+\begin{theorem}[Picard--Lindelöf {\cite{picard1890,lindelof1894}}]
+  \label{thm:pl}
+  Let $f(x,y)$ be continuous on the rectangle
+  $\mathcal{R} = [x_0{-}a, x_0{+}a] \times [y_0{-}b, y_0{+}b]$
+  and satisfy the Lipschitz condition with respect to~$y$:
+  $\abs{f(x,y_1) - f(x,y_2)} \leq L\abs{y_1 - y_2}$ for some
+  $L > 0$.  Then there exists a unique solution $y(x)$ to
+  \eqref{eq:ivp} on some interval $[x_0{-}h, x_0{+}h]$.
+\end{theorem}
+
+\subsection{The Power Series Method}
+
+Assume the solution admits the representation
+\begin{equation}
+  y(x) = \sum_{n=0}^{\infty} a_n\,(x - x_0)^n,
+  \label{eq:series}
+\end{equation}
+with coefficients $\{a_n\}$ determined recursively by substituting
+\eqref{eq:series} into the ODE and equating coefficients of identical
+powers of $(x - x_0)$.  The series converges within the
+\emph{radius of convergence}
+\begin{equation}
+  \Rconv = \liminf_{n\to\infty} \abs{a_n}^{-1/n}
+  \quad \text{(Cauchy--Hadamard formula).}
+  \label{eq:CH}
+\end{equation}
+By the theory of analytic continuation~\cite{coddington1955},
+$\Rconv$ equals the distance in~$\C$ from~$x_0$ to the nearest
+singularity of the analytic continuation of~$y$.
+
+\subsection{Classical Numerical Methods}
+
+\paragraph{Euler method \cite{euler1768}.}
+\begin{equation}
+  y_{n+1} = y_n + h\,f(x_n,\,y_n).
+  \label{eq:euler}
+\end{equation}
+The local truncation error (LTE) is $\OO(h^2)$, giving a global
+error of $\OO(h)$~\cite{hairer1993}.
+
+\paragraph{Fourth-order Runge--Kutta (RK4)
+  \cite{runge1895,kutta1901,butcher1963}.}
+\begin{equation}
+  \begin{aligned}
+    k_1 &= f(x_n,\;y_n),\\
+    k_2 &= f\!\left(x_n + \tfrac{h}{2},\; y_n + \tfrac{h}{2}k_1\right),\\
+    k_3 &= f\!\left(x_n + \tfrac{h}{2},\; y_n + \tfrac{h}{2}k_2\right),\\
+    k_4 &= f(x_n + h,\; y_n + hk_3),\\
+    y_{n+1} &= y_n + \frac{h}{6}\bigl(k_1 + 2k_2 + 2k_3 + k_4\bigr).
+  \end{aligned}
+  \label{eq:rk4}
+\end{equation}
+The LTE is $\OO(h^5)$, yielding a global error of $\OO(h^4)$.
+
+\subsection{Padé Approximants}
+\label{sec:pade_def}
+
+\begin{definition}[Padé approximant {\cite{baker1996}}]
+  \label{def:pade}
+  Given a formal power series $T(x) = \sum_{n=0}^{N} a_n x^n$, the
+  Padé approximant of order $[L/M]$ is the rational function
+  \begin{equation}
+    [L/M](x) \;=\; \frac{P_L(x)}{Q_M(x)}
+    \;=\; \frac{p_0 + p_1 x + \cdots + p_L x^L}
+               {1   + q_1 x + \cdots + q_M x^M}
+    \label{eq:pade}
+  \end{equation}
+  such that $P_L(x) - Q_M(x)\,T(x) = \OO(x^{L+M+1})$.
+  The $L + M + 1$ unknown coefficients $(p_i, q_j)$ are found by
+  first solving the $M \times M$ linear system
+  \begin{equation}
+    \sum_{j=1}^{M} a_{L-j+k}\,q_j = -a_{L+k},
+    \quad k = 1, \ldots, M,
+    \label{eq:pade_sys}
+  \end{equation}
+  via Gaussian elimination (standard construction) or via SVD for
+  numerical robustness~\cite{gonnet2013}, and then computing
+  $p_k = \sum_{j=0}^{\min(k,M)} a_{k-j}\,q_j$.
+\end{definition}
+
+\begin{remark}[Stahl's diagonal convergence theorem {\cite{baker1996}}]
+  Among all $[L/M]$ with $L + M + 1$ fixed, the diagonal sequence
+  $[M/M]$ maximises the domain of convergence in~$\C$.  This is the
+  theoretical justification for preferring diagonal Padé approximants.
+\end{remark}
+
+%% ================================================================
+\section{Problem Formulation and Methodology}
+\label{sec:methods}
+%% ================================================================
+
+We apply the power series method and classical numerical methods to
+three physically motivated ODE systems.  Except where noted, the
+integration interval is $[0, 5]$.
+
+\subsection{Case 1: Newton's Law of Cooling}
+\label{sec:newton}
+
+\paragraph{Model.}
+\begin{equation}
+  y' = -k(y - T_m), \quad y(0) = y_0;
+  \qquad k = 0.5,\; T_m = 20,\; y_0 = 100.
+  \label{eq:newton}
+\end{equation}
+\paragraph{Exact solution.}
+$y(x) = T_m + (y_0 - T_m)\,e^{-kx}$.
+
+\paragraph{Power-series recurrence.}
+Substituting $y(x) = \sum_{n=0}^{\infty} a_n x^n$ and $y'(x) = \sum_{n=0}^{\infty} (n+1)a_{n+1}x^n$ into the rearranged ODE $y' + ky = k T_m$ yields
+\begin{equation}
+  \sum_{n=0}^{\infty} (n+1)a_{n+1}x^n + \sum_{n=0}^{\infty} k a_n x^n = k T_m.
+\end{equation}
+Equating coefficients of $x^0$ on both sides gives the first-order relation $a_1 + k a_0 = k T_m \implies a_1 = -k(a_0 - T_m)$. For $n \geq 1$, matching the coefficients of $x^n$ with the right-hand side (which is zero for all positive powers of $x$) gives the general recurrence relation:
+\begin{equation}
+  a_1 = -k(a_0 - T_m),
+  \qquad
+  a_{n+1} = \frac{-k\,a_n}{n+1},\quad n \geq 1.
+  \label{eq:newton_rec}
+\end{equation}
+
+\begin{remark}
+  The constant $T_m$ contributes only to the $n = 0$ balance: for
+  $n \geq 1$ the recurrence is homogeneous.  One can verify that
+  $a_n = (y_0 - T_m)(-k)^n / n!$, reproducing the Taylor coefficients
+  of $(y_0 - T_m)e^{-kx}$.  Thus $\Rconv = \infty$.
+\end{remark}
+
+\subsection{Case 2: Airy Equation}
+\label{sec:airy}
+
+\paragraph{Model.}
+\begin{equation}
+  y'' - x\,y = 0, \quad y(0) = 1,\; y'(0) = 0.
+  \label{eq:airy}
+\end{equation}
+The Airy equation arises in wave propagation, optics, and quantum
+mechanics~\cite{boyce2017}.  Its general solution is expressed in
+terms of the Airy functions Ai and Bi, which are not elementary but
+are well-tabulated special functions.
+
+\paragraph{Power-series recurrence.}
+Substituting \eqref{eq:series} into \eqref{eq:airy} and noting that
+multiplication by~$x$ shifts the series index by one:
+\begin{equation}
+  a_2 = 0, \qquad
+  a_{n+2} = \frac{a_{n-1}}{(n+1)(n+2)}, \quad n \geq 1.
+  \label{eq:airy_rec}
+\end{equation}
+With the given initial conditions, all coefficients $a_{3k+1}$ vanish
+and the solution involves only the family $\{a_{3k}\}_{k \geq 0}$.
+
+\begin{remark}
+  Since the coefficients of \eqref{eq:airy} are entire functions,
+  $x_0 = 0$ is an ordinary point and $\Rconv = \infty$~\cite{coddington1955}.
+  Nevertheless, the exponential growth of the Airy function for
+  positive~$x$ demands $N \gg 20$ for accuracy far from~$x_0$.
+\end{remark}
+
+\subsection{Case 3: Logistic Growth (Riccati-type)}
+\label{sec:logistic}
+
+\paragraph{Model.}
+\begin{equation}
+  y' = r\,y\!\left(1 - \frac{y}{K}\right), \quad y(0) = y_0;
+  \qquad r = 1,\; K = 100,\; y_0 = 10.
+  \label{eq:logistic}
+\end{equation}
+
+\paragraph{Exact solution.}
+\begin{equation}
+  y(x) = \frac{K y_0}{y_0 + (K - y_0)\,e^{-rx}}.
+  \label{eq:logistic_exact}
+\end{equation}
+
+\paragraph{Power-series recurrence.}
+Using the Cauchy product $c_n = \sum_{k=0}^{n} a_k a_{n-k}$ for the
+nonlinear term $y^2$:
+\begin{equation}
+  a_{n+1} = \frac{r}{n+1}\!\left(a_n - \frac{c_n}{K}\right),
+  \quad n \geq 0.
+  \label{eq:logistic_rec}
+\end{equation}
+The Cauchy product costs $\OO(n)$ per step, giving total cost
+$\OO(N^2)$ for $N$ coefficients~\cite{corliss1982}.
+
+\paragraph{Complex singularity analysis.}
+The denominator of \eqref{eq:logistic_exact} vanishes when
+\begin{equation}
+  y_0 + (K - y_0)\,e^{-rx} = 0
+  \;\Longrightarrow\;
+  e^{-x} = -\frac{y_0}{K - y_0} = -\frac{1}{9}.
+  \label{eq:denom}
+\end{equation}
+Taking the complex logarithm (all branches $n \in \mathbb{Z}$):
+\begin{equation}
+  -x = -\ln 9 + i\pi + 2\pi i n
+  \;\Longrightarrow\;
+  \xp^{(n)} = \ln 9 - i\pi - 2\pi i n.
+  \label{eq:poles_all}
+\end{equation}
+The two poles closest to~$x_0 = 0$ (principal branch $n = 0$ and
+$n = -1$) form a complex conjugate pair:
+\begin{equation}
+  \xp^{(0)} = \ln 9 - i\pi \approx 2.197 - 3.142\,i,
+  \qquad
+  \xp^{(-1)} = \ln 9 + i\pi \approx 2.197 + 3.142\,i.
+  \label{eq:poles}
+\end{equation}
+By \eqref{eq:CH}, the radius of convergence is
+\begin{equation}
+  \boxed{\Rconv = \abs{\xp^{(0)}}
+    = \sqrt{\ln^2 9 + \pi^2}
+    \approx \sqrt{4.827 + 9.870}
+    \approx 3.834.}
+  \label{eq:R}
+\end{equation}
+Since $x_{\mathrm{eval}} = 5.0 > \Rconv \approx 3.83$, the Taylor
+series is mathematically \emph{guaranteed to diverge} at $x = 5.0$ as
+$N \to \infty$.
+
+%% ================================================================
+\section{Numerical Results and Benchmarks}
+\label{sec:results}
+%% ================================================================
+
+All numerical experiments and benchmarks were implemented in C and compiled with GCC using \texttt{-O2} optimization flags. Benchmarks were executed on a Lenovo ThinkBook 14 G7+ AKP laptop (Chinese domestic version) powered by an AMD AI 7 H 350 processor running Fedora 44 GNOME desktop environment. Execution timings were measured using POSIX \texttt{clock\_gettime(CLOCK\_MONOTONIC)} and averaged over $10{,}000$ independent runs.
+
+\subsection{Accuracy at \texorpdfstring{$x = 5.0$}{x = 5.0}}
+
+Table~\ref{tab:accuracy} compares the computed values and absolute
+errors at $x = 5.0$.  For the Airy equation, which has no elementary
+closed-form solution, the $N = 100$ power-series value
+(convergent to machine precision at $\Rconv = \infty$) serves as the
+reference.
+
+\begin{table}[H]
+  \centering
+  \caption{Computed values and absolute errors at $x = 5.0$.
+           Parameters: Newton's Cooling ($y_0 = 100$, $T_m = 20$,
+           $k = 0.5$); Airy ($y_0 = 1$, $y'_0 = 0$);
+           Logistic ($y_0 = 10$, $K = 100$, $r = 1$).}
+  \label{tab:accuracy}
+  \small
+  \renewcommand{\arraystretch}{1.15}
+  \begin{tabular}{@{}llrrl@{}}
+    \toprule
+    \textbf{Model / Method} & \textbf{Config.}
+      & \textbf{Value at $x=5.0$}
+      & \textbf{Abs.\ error} & \textbf{Note}\\
+    \midrule
+    \multicolumn{5}{@{}l}{\textit{Newton's Law of Cooling
+      \quad (exact: $26.5668$)}}\\
+    \quad Exact solution         & ---    & $26.5668$ & $0$              & \\
+    \quad Euler                  & $h=0.1$  & $26.1556$ & $4.11\times10^{-1}$ & \\
+    \quad Euler                  & $h=0.01$ & $26.5257$ & $4.11\times10^{-2}$ & \\
+    \quad RK4                    & $h=0.1$  & $26.5668$ & $8.91\times10^{-7}$ & \\
+    \quad RK4                    & $h=0.01$ & $26.5668$ & $8.58\times10^{-11}$ & \\
+    \quad Power series           & $N=5$    & $6.7708$  & $19.80$             & \\
+    \quad Power series           & $N=10$   & $26.6062$ & $3.95\times10^{-2}$ & \\
+    \quad Power series           & $N=20$   & $26.5668$ & $3.20\times10^{-10}$ & matches RK4\\
+    \midrule
+    \multicolumn{5}{@{}l}{\textit{Airy Equation
+      \quad (reference $N=100$: $534.854$)}}\\
+    \quad Euler                  & $h=0.1$  & $276.833$ & $258.02$            & \\
+    \quad Euler                  & $h=0.01$ & $497.418$ & $37.44$             & \\
+    \quad RK4                    & $h=0.1$  & $534.824$ & $3.06\times10^{-2}$ & \\
+    \quad RK4                    & $h=0.01$ & $534.854$ & $3.53\times10^{-6}$ & \\
+    \quad Power series           & $N=5$    & $21.833$  & $513.02$            & \\
+    \quad Power series           & $N=10$   & $259.343$ & $275.51$            & \\
+    \quad Power series           & $N=20$   & $521.704$ & $13.15$             & slow convergence\\
+    \midrule
+    \multicolumn{5}{@{}l}{\textit{Logistic Growth
+      \quad (exact: $94.2826$; $\Rconv \approx 3.83$)}}\\
+    \quad Exact solution         & ---      & $94.2826$  & $0$              & \\
+    \quad Euler                  & $h=0.1$  & $94.4253$  & $1.43\times10^{-1}$ & \\
+    \quad Euler                  & $h=0.01$ & $94.2964$  & $1.39\times10^{-2}$ & \\
+    \quad RK4                    & $h=0.1$  & $94.2826$  & $7.3\times10^{-6}$  & \\
+    \quad RK4                    & $h=0.01$ & $94.2826$  & $7.15\times10^{-10}$ & \\
+    \quad Power series           & $N=5$    & $45.625$   & $48.66$             & \\
+    \quad Power series           & $N=10$   & $937.594$  & $843.31$            & diverging\\
+    \quad Power series           & $N=20$   & $-11{,}060$ & $>11{,}000$        & \textbf{catastrophic}\\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\subsection{Experimental Order of Convergence}
+
+The EOC is computed as
+\begin{equation}
+  \mathrm{EOC} = \frac{\log(E_{h_1}/E_{h_2})}{\log(h_1/h_2)},
+  \label{eq:eoc}
+\end{equation}
+using $h_1 = 0.1$ and $h_2 = 0.01$.  Results are reported in
+Table~\ref{tab:eoc}.
+
+\begin{table}[H]
+  \centering
+  \caption{Experimental order of convergence (EOC) at $x = 5.0$.
+           Theoretical orders: Euler $p = 1$, RK4 $p = 4$.}
+  \label{tab:eoc}
+  \renewcommand{\arraystretch}{1.15}
+  \begin{tabular}{@{}lcccc@{}}
+    \toprule
+    \textbf{Model}
+      & \textbf{EOC (Euler)} & \textbf{(Theory)}
+      & \textbf{EOC (RK4)}  & \textbf{(Theory)}\\
+    \midrule
+    Newton's Cooling & $1.00$ & $(1)$ & $3.95$ & $(4)$ \\
+    Airy equation    & $0.84$ & $(1)$ & $3.94$ & $(4)$ \\
+    Logistic growth  & $1.01$ & $(1)$ & $4.02$ & $(4)$ \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\begin{remark}
+  The Euler EOC of $0.84$ for the Airy equation (slightly below the
+  theoretical value of~$1$) is attributed to the exponential growth
+  of the solution near $x = 5.0$, which amplifies accumulated errors
+  over many integration steps.  This effect is consistent with the
+  theoretical analysis of variable-coefficient
+  problems~\cite{hairer1993}.
+\end{remark}
+
+\subsection{Execution-Time Benchmarks}
+
+Table~\ref{tab:timing} reports mean wall-clock times per trajectory
+solve.  Numerical methods use $h = 0.001$ (5{,}000 integration
+steps); the power series is evaluated at $50$ output points with
+$N = 20$.
+
+\begin{table}[H]
+  \centering
+  \caption{Average computational runtime per trajectory solve
+    ($\mu$s), averaged over $10{,}000$ runs.
+    GCC \texttt{-O2}; POSIX \texttt{clock\_gettime}.}
+  \label{tab:timing}
+  \renewcommand{\arraystretch}{1.15}
+  \begin{tabular}{@{}lccc@{}}
+    \toprule
+    \textbf{Model}
+      & \textbf{Euler ($\mu$s)} & \textbf{RK4 ($\mu$s)}
+      & \textbf{Power series ($\mu$s)}\\
+      & ($h=0.001$, 5000 pts)   & ($h=0.001$, 5000 pts)
+      & ($N=20$, 50 pts)\\
+    \midrule
+    Newton's Cooling & $12.13$ & $54.32$ & $1.88$ \\
+    Airy equation    & $21.03$ & $63.77$ & $1.38$ \\
+    Logistic growth  & $24.99$ & $103.33$ & $11.54$ \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\begin{remark}[Benchmark fairness~{\cite{barrio2005}}]
+  \label{rem:fair}
+  The numerical methods produce $5{,}000$ output points; the power
+  series produces only~$50$.  On a per-output-point basis, RK4 costs
+  $\approx 0.011\;\mu$s/point whereas the power series costs
+  $\approx 0.038\;\mu$s/point.  The raw speed advantage of the power
+  series is most meaningful when solutions are needed at a \emph{sparse}
+  set of evaluation points.
+\end{remark}
+
+%% ================================================================
+\section{Discussion and Comparative Analysis}
+\label{sec:analysis}
+%% ================================================================
+
+\subsection{Locality vs.\ Global Stability for Linear Systems}
+
+For linear constant-coefficient ODEs (Newton's Cooling), the
+$N = 20$ power series achieves error $3.0 \times 10^{-10}$, matching
+RK4 with $h = 0.01$, and is $6$--$40\times$ faster for sparse
+evaluation (Table~\ref{tab:timing}, Remark~\ref{rem:fair}).
+
+For the Airy equation, $\Rconv = \infty$ guarantees convergence
+everywhere, yet the $N = 20$ series still gives error $13.15$ at
+$x = 5.0$.  The cause is the exponential growth of the Airy function:
+partial sums grow before eventually decaying, requiring $N \gg 20$
+for accurate evaluation far from~$x_0$.  RK4 with $h = 0.01$
+maintains error $3.5 \times 10^{-6}$ uniformly over $[0, 5]$.
+
+\subsection{Convergence Order Verification}
+
+Table~\ref{tab:eoc} confirms classical theory~\cite{butcher2016}:
+Euler achieves $\OO(h)$ and RK4 achieves $\OO(h^4)$, with the
+minor Airy anomaly explained in Remark~\ref{rem:fair}.
+
+\subsection{Fundamental Limitation of Taylor Series for
+  Nonlinear Problems}
+
+The most significant finding of this study is the catastrophic
+divergence of the logistic power series.  As $N$ increases from~$5$
+to~$20$, the absolute error grows from $48.66$ to $>11{,}000$:
+adding more terms \emph{worsens} the result because $x = 5.0 >
+\Rconv \approx 3.83$.  This is not an algorithmic failure but a
+rigorous consequence of the complex singularity
+structure~\eqref{eq:poles}~\cite{coddington1955}.
+
+Discrete numerical methods are not constrained by the complex poles of
+the continuous solution.  By advancing along the real axis in small
+steps, Euler and RK4 traverse the radius boundary
+$x \approx 3.83$ without difficulty and track the stable carrying
+capacity $y(5.0) \approx 94.28$ with errors down to $7 \times 10^{-10}$
+(RK4, $h = 0.01$).
+
+\begin{remark}[Analytical continuation]
+  The divergence of the Taylor series outside $\Rconv$ is not an
+  absolute limitation of all analytical representation methods.  In
+  mathematical physics, rational approximations such as Padé
+  approximants are frequently constructed from Taylor coefficients to
+  analytically continue the solution beyond complex singular
+  poles~\cite{baker1996}.  Exploring these techniques represents a
+  key bridge between local power series expansions and global
+  numerical stability.  This is the subject of
+  Section~\ref{sec:pade}.
+\end{remark}
+
+%% ================================================================
+\section{Extended Contribution: Padé Approximants\texorpdfstring{\\}{ }for Convergence-Radius Extension}
+\label{sec:pade}
+%% ================================================================
+
+Section~\ref{sec:analysis} identified a fundamental limitation of the
+Taylor series for the logistic model.  This section addresses
+\textbf{Research Gap~2}: \emph{given the known complex singularity
+position, how should the Padé order $[L/M]$ be chosen optimally?}
+
+\subsection{Motivation}
+
+A polynomial cannot possess a pole at a finite point, but the
+logistic solution \eqref{eq:logistic_exact} has poles
+at~\eqref{eq:poles}.  The rational denominator $Q_M(x)$ in a Padé
+approximant can vanish near those poles, effectively absorbing the
+singularities and extending the domain of
+approximation~\cite{baker1996}.
+
+\subsection{Theoretical Rule: \texorpdfstring{$M \geq 2$}{M >= 2} for One Complex Conjugate Pair}
+\label{sec:m_rule}
+
+\begin{lemma}
+  \label{prop:m2}
+  Let the singularities of $y(x)$ nearest to $x_0 \in \R$ be the
+  complex conjugate pair $\xp = \alpha \pm i\beta$
+  with $\beta \neq 0$.  Then any real-coefficient denominator
+  polynomial $Q_M(x)$ that correctly models the factor
+  $(x - \alpha)^2 + \beta^2$ must have degree $M \geq 2$.
+\end{lemma}
+
+\begin{proof}
+  A real polynomial $Q_1(x) = 1 + q_1 x$ has exactly one real root,
+  hence it cannot have the complex roots $\alpha \pm i\beta$
+  ($\beta \neq 0$).  A real polynomial of degree~$2$ can be written
+  as $(x - \alpha)^2 + \beta^2 = x^2 - 2\alpha x + (\alpha^2 +
+  \beta^2)$, which has exactly the desired complex conjugate roots.
+  Therefore $M \geq 2$ is necessary and sufficient at minimum.
+\end{proof}
+
+For the logistic model, there is one conjugate pair
+(\emph{cf.}~\eqref{eq:poles}), giving the rule
+$M \geq 2 \times 1 = 2$.
+
+\subsection{Experiments}
+
+All experiments below use the logistic parameters
+$y_0 = 10$, $K = 100$, $r = 1$ with expansion point~$x_0 = 0$
+and evaluation point $x_{\mathrm{eval}} = 5.0$ unless otherwise stated.
+The exact value is $y(5.0) = 94.2826$.
+
+\subsubsection{Experiment 1: Absolute Error vs.\ Order \texorpdfstring{$[L/M]$}{[L/M]}}
+
+Table~\ref{tab:pade_order} compares absolute errors for Taylor and
+Padé approximants of increasing order.
+
+\begin{table}[H]
+  \centering
+  \caption{Absolute error $|y_{\mathrm{approx}}(5.0) - y(5.0)|$
+    for Taylor and Padé approximants at $x_0 = 0$.
+    Exact value: $y(5.0) = 94.2826$.}
+  \label{tab:pade_order}
+  \small
+  \renewcommand{\arraystretch}{1.15}
+  \setlength{\tabcolsep}{5.5pt}
+  \begin{tabular}{@{}llrrll@{}}
+    \toprule
+    \textbf{Method} & \textbf{Order}
+      & \textbf{\# coeff.}
+      & \textbf{Value}
+      & \textbf{Abs.\ error}
+      & \textbf{Assessment}\\
+    \midrule
+    \multicolumn{6}{@{}l}{\textit{Taylor series (diverges for $N \geq 8$)}}\\
+    Taylor & $N = 5$  &  6 & $45.625$    & $48.66$ & marginal\\
+    Taylor & $N = 10$ & 11 & $937.594$   & $843.31$ & diverging\\
+    Taylor & $N = 20$ & 21 & $-11{,}060$  & $>11{,}000$ & catastrophic\\
+    \midrule
+    \multicolumn{6}{@{}l}{\textit{Padé with $M = 1$ (fails regardless of $L$)}}\\
+    Padé & $[1/1]$ & 3 & $-35.00$   & $129.28$ & $M=1$: fails\\
+    Padé & $[2/1]$ & 4 & $2{,}215.0$ & $2{,}121$ & $M=1$: fails\\
+    \midrule
+    \multicolumn{6}{@{}l}{\textit{Padé with $M \geq 2$ (converges monotonically on diagonal)}}\\
+    Padé & $[2/2]$ &  5 & $51.54$   & $42.74$ & improving\\
+    Padé & $[3/2]$ &  6 & $84.32$   & $9.96$  & good\\
+    Padé & $[4/3]$ &  8 & $96.59$   & $2.30$  & good\\
+    Padé & $[4/4]$ &  9 & $93.46$   & $0.822$ & very good\\
+    Padé & $[5/5]$ & 11 & $94.33$   & $0.046$ & excellent\\
+    Padé & $[6/6]$ & 13 & $94.281$  & $1.85 \times 10^{-3}$ & outstanding\\
+    Padé & $[8/8]$ & 17 & $94.2826$ & $1.30 \times 10^{-6}$ & machine precision\\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+The $M = 1$ rows fail regardless of~$L$, confirming
+Lemma~\ref{prop:m2}.  The diagonal sequence $[M/M]$ converges
+monotonically, consistent with Stahl's theorem.
+
+\subsubsection{Experiment 2: Froissart Doublets}
+
+Inspection of Table~\ref{tab:pade_order} reveals an anomaly:
+$[2/3]$ (error $245.7$) performs \emph{worse} than $[2/2]$
+(error $42.7$), despite using one additional denominator coefficient.
+This is caused by a \emph{Froissart doublet}: a near-cancelling
+spurious pole--zero pair arising from an ill-conditioned
+system~\eqref{eq:pade_sys}~\cite{gonnet2013}.  The SVD-based
+robust Padé algorithm of Gonnet, Güttel, and Trefethen detects and
+removes such doublets automatically~\cite{gonnet2013}, providing a
+practical remedy.
+
+\subsubsection{Experiment 3: Expansion-Point Shift}
+\label{sec:shift}
+
+The radius of convergence from a new expansion point~$x_0$ is
+\begin{equation}
+  R'(x_0) = \abs{\xp - x_0}
+  = \sqrt{(\ln 9 - x_0)^2 + \pi^2}.
+  \label{eq:Rprime}
+\end{equation}
+
+\begin{proposition}[Shift condition]
+  \label{prop:shift}
+  For $x_{\mathrm{eval}} = 5.0$ and $x_0 \in [0, 5)$, the
+  convergence condition $|x_{\mathrm{eval}} - x_0| < R'(x_0)$ is
+  equivalent to
+  \begin{equation}
+    x_0 > \frac{25 - \ln^2 9 - \pi^2}{2(5 - \ln 9)}
+    \approx 1.838.
+    \label{eq:shift_cond}
+  \end{equation}
+\end{proposition}
+
+\begin{proof}
+  Squaring both sides of $(5 - x_0) < \sqrt{(\ln 9 - x_0)^2 + \pi^2}$
+  and expanding yields the linear inequality
+  $25 - 10\,x_0 < \ln^2 9 - 2\,x_0 \ln 9 + \pi^2$, which
+  rearranges to~\eqref{eq:shift_cond}.
+\end{proof}
+
+\begin{table}[H]
+  \centering
+  \caption{Absolute error of Padé $[3/3]$ at
+    $x_{\mathrm{eval}} = 5.0$ for varying expansion point~$x_0$.
+    Condition~\eqref{eq:shift_cond} requires $x_0 > 1.838$.}
+  \label{tab:shift}
+  \renewcommand{\arraystretch}{1.15}
+  \begin{tabular}{@{}ccccc@{}}
+    \toprule
+    $x_0$ & $y(x_0)$ & $[3/3](5.0)$
+      & Abs.\ error
+      & $|5 - x_0| < R'(x_0)$?\\
+    \midrule
+    $0.0$ & $10.000$ & $105.625$ & $11.342$ & No  ($5.0 > R' = 3.83$)\\
+    $1.0$ & $23.197$ &  $95.877$ &  $1.595$ & No  ($4.0 > R' = 3.36$)\\
+    $2.0$ & $45.085$ &  $94.447$ &  $0.164$ & Yes ($3.0 < R' = 3.15$)\\
+    $2.5$ & $57.512$ &  $94.324$ &  $0.041$ & Yes ($2.5 < R' = 3.19$)\\
+    $3.0$ & $69.057$ &  $94.291$ &  $0.008$ & Yes ($2.0 < R' = 3.24$)\\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+Shifting~$x_0$ from $0$ to $3.0$ reduces the Padé $[3/3]$ error by
+a factor of $\mathbf{1{,}422}$ using the \emph{same} 7~Taylor
+coefficients.
+
+\subsubsection{Experiment 4: Error Matrix \texorpdfstring{$[L/M]$}{[L/M]}}
+
+Table~\ref{tab:matrix} presents the absolute errors for all
+$(L, M) \in \{1, \ldots, 7\}^2$, providing a complete experimental
+verification of Lemma~\ref{prop:m2}.
+
+\begin{table}[H]
+  \centering
+  \caption{Absolute error at $x = 5.0$ for Padé $[L/M]$ with
+    $x_0 = 0$.
+    Colour: \colorbox{badcell}{red} $> 100$;
+    \colorbox{warncell}{yellow} $1$--$100$;
+    \colorbox{goodcell}{green} $< 1$.
+    Entries marked $\dagger$ are suspected Froissart doublets.}
+  \label{tab:matrix}
+  \footnotesize
+  \renewcommand{\arraystretch}{1.15}
+  \setlength{\tabcolsep}{4pt}
+  \begin{tabular}{@{}c|ccccccc@{}}
+    \toprule
+    $L \backslash M$ & $1$ & $2$ & $3$ & $4$ & $5$ & $6$ & $7$\\
+    \midrule
+    1 & \cellcolor{badcell}$129.3$
+      & \cellcolor{warncell}$80.4$
+      & \cellcolor{badcell}$111.4^\dagger$
+      & \cellcolor{warncell}$80.4$
+      & \cellcolor{badcell}$123.1$
+      & \cellcolor{warncell}$68.9$
+      & \cellcolor{badcell}$279.8$ \\
+    2 & \cellcolor{badcell}$2121$
+      & \cellcolor{warncell}$42.7$
+      & \cellcolor{badcell}$245.7^\dagger$
+      & \cellcolor{warncell}$32.1$
+      & \cellcolor{warncell}$43.0$
+      & \cellcolor{warncell}$13.5$
+      & \cellcolor{warncell}$8.11$ \\
+    3 & \cellcolor{badcell}$124.2$
+      & \cellcolor{warncell}$9.96$
+      & \cellcolor{warncell}$11.3$
+      & \cellcolor{warncell}$5.48$
+      & \cellcolor{warncell}$3.02$
+      & \cellcolor{warncell}$1.30$
+      & \cellcolor{goodcell}$0.537$ \\
+    4 & \cellcolor{badcell}$138.4$
+      & \cellcolor{warncell}$1.82$
+      & \cellcolor{warncell}$2.30^\dagger$
+      & \cellcolor{goodcell}$0.822$
+      & \cellcolor{goodcell}$0.348$
+      & \cellcolor{goodcell}$0.132$
+      & \cellcolor{goodcell}$0.046$ \\
+    5 & \cellcolor{badcell}$597.3$
+      & \cellcolor{warncell}$2.28$
+      & \cellcolor{warncell}$1.90$
+      & \cellcolor{goodcell}$0.102$
+      & \cellcolor{goodcell}$0.046$
+      & \cellcolor{goodcell}$0.015$
+      & \cellcolor{goodcell}$0.0045$ \\
+    6 & \cellcolor{badcell}$355.5$
+      & \cellcolor{goodcell}$0.17$
+      & \cellcolor{goodcell}$0.856$
+      & \cellcolor{goodcell}$0.014$
+      & \cellcolor{goodcell}$0.008$
+      & \cellcolor{goodcell}$0.002$
+      & \cellcolor{goodcell}$0.0005$ \\
+    7 & \cellcolor{badcell}$289.3$
+      & \cellcolor{goodcell}$0.52$
+      & \cellcolor{goodcell}$0.288$
+      & \cellcolor{goodcell}$0.008$
+      & \cellcolor{goodcell}$0.025$
+      & \cellcolor{goodcell}$0.0002$
+      & \cellcolor{goodcell}$0.0001$ \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+Column $M = 1$ is uniformly coloured red for all values of~$L$,
+confirming Lemma~\ref{prop:m2} without exception.
+
+\subsubsection{Experiment 5: Work-Precision Diagram}
+
+Table~\ref{tab:work_prec} plots absolute error against total number
+of Taylor coefficients consumed, providing a fair method-agnostic
+comparison.
+
+\begin{table}[H]
+  \centering
+  \caption{Work-precision data: number of coefficients used vs.\
+    absolute error at $x = 5.0$, $x_0 = 0$.}
+  \label{tab:work_prec}
+  \renewcommand{\arraystretch}{1.15}
+  \begin{tabular}{@{}llrr@{}}
+    \toprule
+    \textbf{Method} & \textbf{Config.}
+      & \textbf{\# coeff.} & \textbf{Abs.\ error}\\
+    \midrule
+    Taylor & $N = 5$  &  6 & $48.66$ \\
+    Taylor & $N = 8$  &  9 & $26.97$ \\
+    Taylor & $N = 10$ & 11 & $843.3$ (diverging) \\
+    Taylor & $N = 12$ & 13 & $906.1$ (diverging) \\
+    Taylor & $N = 20$ & 21 & $>11{,}000$ (catastrophic) \\
+    \midrule
+    Padé & $[2/2]$ &  5 & $42.74$ \\
+    Padé & $[4/4]$ &  9 & $8.22 \times 10^{-1}$ \\
+    Padé & $[5/5]$ & 11 & $4.60 \times 10^{-2}$ \\
+    Padé & $[6/6]$ & 13 & $1.85 \times 10^{-3}$ \\
+    Padé & $[8/8]$ & 17 & $< 10^{-6}$ \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+With 9~coefficients: Taylor $N = 8$ gives error $26.97$, while Padé
+$[4/4]$ gives $0.822$---a factor of~$33$ reduction in error.  With
+13~coefficients: Taylor $N = 12$ \emph{diverges} (error $906$), while
+Padé $[6/6]$ successfully resolves the solution with an absolute error of $1.85 \times 10^{-3}$.
+
+\begin{remark}[Rigor of Taylor-Padé Comparison and RK4 Alternative]
+  \label{rem:pade_rk4_work}
+  Evaluating the Taylor series at $x = 5.0 > \Rconv \approx 3.83$
+  mathematically guarantees its divergence. Consequently, comparing Padé
+  approximants to Taylor polynomials outside the convergence circle evaluates
+  a convergent series against a divergent one. A more complete comparison
+  requires assessing the computational workload of the Padé approximant
+  against classical stepping solvers such as RK4.
+
+  For a single evaluation point $x_{\mathrm{eval}} = 5.0$, a diagonal Padé
+  $[M/M]$ requires computing $2M+1$ Taylor coefficients and solving an
+  $M \times M$ Hankel-like linear system. For $M=6$ (13 coefficients), the Cauchy product
+  recurrences cost $\approx 169$ flops, and Gaussian elimination with partial pivoting
+  costs $\approx \frac{2}{3} M^3 \approx 144$ flops, totalling $\approx 313$ flops. In contrast,
+  RK4 with $h = 0.01$ (500 steps) requires $2{,}000$ evaluations of the ODE right-hand-side
+  function and $\approx 10{,}000$ flops for step updates. This demonstrates that for sparse
+  evaluation points, the local Padé rational approximant provides an extremely low-cost alternative.
+  However, for global trajectory generation (dense output), the stepping nature of RK4 scales linearly
+  with the domain size ($\OO(\text{steps})$), whereas evaluating Padé approximants at multiple local points
+  would require repeatedly solving ill-conditioned Hankel systems (with an $\OO(M^3)$ algebraic overhead per point),
+  making it computationally less efficient. Furthermore, in higher-order scenarios, Gaussian elimination is prone
+  to numerical instability due to the severe ill-conditioning of Hankel matrices, causing spurious pole-zero pairs
+  (Froissart doublets); under such circumstances, robust methods like SVD-based Padé or Chebfun-based AAA algorithms
+  are required.
+\end{remark}
+
+\subsection{Practical Algorithm}
+
+Algorithm~\ref{alg:pade} summarises the proposed practical procedure.
+
+\begin{algorithm}[H]
+  \caption{Padé order selection from singularity structure}
+  \label{alg:pade}
+  \begin{algorithmic}[1]
+    \Require ODE $y' = f(x,y)$, initial condition $y(x_0) = y_0$,
+      target $x_{\mathrm{eval}}$, tolerance $\varepsilon > 0$.
+    \Statex\textbf{Step 1.} Set denominator of exact solution to zero; solve
+      in~$\C$ to find $\xp$.
+    \Statex\textbf{Step 2.} Compute $\Rconv = |\xp - x_0|$.
+    \If{$x_{\mathrm{eval}} \leq \Rconv$}
+      Use Taylor series. \textbf{Stop.}
+    \EndIf
+    \Statex\textbf{Step 3.} Count conjugate pairs $n_p$; set
+      $M_{\min} = 2\,n_p$.
+    \Statex\textbf{Step 4.} Check shift condition~\eqref{eq:shift_cond}.
+    \If{$\exists\, x_0^* > x_0$ satisfying~\eqref{eq:shift_cond}}
+      Compute $y(x_0^*)$ via RK4; re-expand at~$x_0^*$; use
+        $[M_{\min}/M_{\min}]$.
+    \Else
+      Start with $[M_{\min}/M_{\min}]$ at~$x_0$; increase $M$ until
+      $|[M/M] - [(M{+}1)/(M{+}1)]| < \varepsilon$.
+    \EndIf
+    \Statex \textbf{Return} Padé approximant.
+  \end{algorithmic}
+\end{algorithm}
+
+\begin{remark}[General formula for $\Rconv$]
+  For general logistic parameters $(r, K, y_0)$:
+  \begin{equation}
+    \Rconv(r, K, y_0)
+    = \frac{1}{r}\sqrt{\ln^2\!\left(\frac{K - y_0}{y_0}\right) + \pi^2}.
+    \label{eq:R_general}
+  \end{equation}
+  As $r$ increases, $\Rconv$ decreases proportionally.  As $y_0 \to
+  K/2$, $\Rconv \to \pi/r$ (minimum); as $y_0 \to 0^+$ or $y_0 \to
+  K^-$, $\Rconv \to \infty$.
+\end{remark}
+
+%% ================================================================
+\section{Conclusion and Future Work}
+\label{sec:conclusion}
+%% ================================================================
+
+This paper compared the power series method with the classical Euler
+and RK4 methods across three physically motivated ODEs, providing
+rigorous error analysis, computational benchmarks, and a new extended
+contribution on Padé rational approximants.  The principal findings
+are as follows.
+
+\begin{enumerate}
+  \item \textbf{Linear constant-coefficient ODEs.}
+        The $N = 20$ power series achieves error $3.0 \times 10^{-10}$
+        for Newton's Cooling---matching RK4 ($h = 0.01$) with a
+        significant speed advantage for sparse evaluation.
+
+  \item \textbf{Linear variable-coefficient ODEs.}
+        For the Airy equation, $\Rconv = \infty$ guarantees
+        convergence, but the exponential growth of the solution
+        demands $N \gg 20$ for accuracy far from the expansion point;
+        RK4 provides uniformly controlled error.
+
+  \item \textbf{Nonlinear ODEs.}
+        The power series diverges for $x > \Rconv \approx 3.83$,
+        with errors exceeding $10^4$ at $x = 5.0$.  This is governed
+        by the nearest complex singularities $\xp = \ln 9 \pm i\pi$
+        and represents a fundamental theoretical limitation.
+
+  \item \textbf{Convergence orders.}
+        EOC analysis confirms $\OO(h)$ for Euler and $\OO(h^4)$ for
+        RK4, consistent with classical theory.
+
+  \item \textbf{(Extended) Padé analysis.}
+        The rule $M \geq 2$ (Lemma~\ref{prop:m2}) is proved
+        and verified by a $7 \times 7$ error matrix.  The
+        expansion-point shift condition $x_0 > 1.838$
+        (Proposition~\ref{prop:shift}) yields a $1{,}422$-fold error
+        reduction at the same Padé order.  The work-precision comparison
+        demonstrates that while Taylor $N = 12$ diverges outside the convergence radius,
+        diagonal Padé $[6/6]$ successfully resolves the solution with high accuracy using the same 13 coefficients.
+\end{enumerate}
+
+\paragraph{Future directions.}
+\begin{itemize}
+  \item \textit{SVD-based robust Padé.}
+        Implement the algorithm of Gonnet, Güttel, and
+        Trefethen~\cite{gonnet2013} in~C to automatically detect and
+        remove Froissart doublets, eliminating the need for manual
+        order selection.
+  \item \textit{General shift condition.}
+        Extend Proposition~\ref{prop:shift} and
+        formula~\eqref{eq:R_general} to arbitrary parameter
+        combinations $(r, K, y_0)$ and to systems with multiple
+        conjugate pole pairs.
+  \item \textit{Adaptive integrators.}
+        Construct a full work-precision diagram comparing all five
+        methods (Taylor, Padé, Euler, RK4, RKF45~\cite{hairer1993}).
+  \item \textit{Algorithmic complexity comparison.}
+        Reimplement and evaluate the theoretical and algorithmic complexity of Algorithm~\ref{alg:pade} against related ODE integrators and solvers reported in the literature. Due to hardware disparities and unavailable original source code, this planned comparison will focus on structural complexity rather than empirical execution timing or hardware-dependent precision.
+  \item \textit{Stiff problems.}
+        Investigate implicit methods~\cite{lambert1991} for stiff
+        extensions and explore whether Padé approximants offer
+        A-stability analogues.
+\end{itemize}
+
+%% ── Acknowledgements ────────────────────────────────────────────
+\section*{Acknowledgements}
+
+The authors are grateful to FPT University for institutional support.
+
+%% ── Declaration of competing interests ─────────────────────────
+\section*{Declaration of Competing Interests}
+
+The authors declare that they have no known competing financial
+interests or personal relationships that could have appeared to
+influence the work reported in this paper.
+
+%% ── Data availability ───────────────────────────────────────────
+\section*{Data Availability}
+
+The complete C source code, benchmark suite, and output CSV data files used in this study are available in the \texttt{benchmark/} directory of the repository.
+
+%% ================================================================
+%% References  (embedded thebibliography — no .bib file needed)
+%% ================================================================
+\begin{thebibliography}{99}
+
+\bibitem{barrio2005}
+R.~Barrio,
+``Performance of the {T}aylor series method for {ODE}s/{DAE}s,''
+\textit{Applied Mathematics and Computation},
+vol.~163, no.~2, pp.~525--545, 2005.
+
+\bibitem{baker1996}
+G.~A.~Baker~Jr.\ and P.~Graves-Morris,
+\textit{Padé Approximants}, 2nd~ed.,
+Encyclopedia of Mathematics and its Applications, vol.~59.
+Cambridge University Press, Cambridge, 1996,
+ISBN 978-0-521-45007-2.
+
+\bibitem{boyce2017}
+W.~E.~Boyce, R.~C.~DiPrima, and D.~B.~Meade,
+\textit{Elementary Differential Equations and Boundary
+Value Problems}, 11th~ed.
+John Wiley \& Sons, Hoboken, NJ, 2017.
+
+\bibitem{butcher1963}
+J.~C.~Butcher,
+``Coefficients for the study of {R}unge--{K}utta integration
+processes,''
+\textit{Journal of the Australian Mathematical Society},
+vol.~3, pp.~185--201, 1963.
+
+\bibitem{butcher1964}
+J.~C.~Butcher,
+``Implicit {R}unge--{K}utta processes,''
+\textit{Mathematics of Computation},
+vol.~18, pp.~50--64, 1964.
+
+\bibitem{butcher2016}
+J.~C.~Butcher,
+\textit{Numerical Methods for Ordinary Differential
+Equations}, 3rd~ed.
+John Wiley \& Sons, Chichester, 2016.
+
+\bibitem{coddington1955}
+E.~A.~Coddington and N.~Levinson,
+\textit{Theory of Ordinary Differential Equations}.
+McGraw-Hill, New York, 1955.
+
+\bibitem{corliss1982}
+G.~F.~Corliss and Y.~F.~Chang,
+``Solving ordinary differential equations using {T}aylor series,''
+\textit{ACM Transactions on Mathematical Software},
+vol.~8, no.~2, pp.~114--144, 1982.
+
+\bibitem{euler1768}
+L.~Euler,
+\textit{Institutionum calculi integralis}, vol.~1.
+Imperial Academy of Sciences, St.~Petersburg, 1768.
+
+\bibitem{gonnet2013}
+P.~Gonnet, S.~Güttel, and L.~N.~Trefethen,
+``Robust {P}adé approximation via {SVD},''
+\textit{SIAM Review},
+vol.~55, no.~1, pp.~101--117, 2013.
+
+\bibitem{hairer1993}
+E.~Hairer, S.~P.~Nørsett, and G.~Wanner,
+\textit{Solving Ordinary Differential Equations~{I}: Nonstiff
+Problems}, 2nd~ed.,
+Springer Series in Computational Mathematics, vol.~8.
+Springer-Verlag, Berlin, 1993.
+
+\bibitem{kutta1901}
+W.~Kutta,
+``Beitrag zur näherungsweisen {I}ntegration totaler
+{D}ifferentialgleichungen,''
+\textit{Zeitschrift für Mathematik und Physik},
+vol.~46, pp.~435--453, 1901.
+
+\bibitem{lambert1991}
+J.~D.~Lambert,
+\textit{Numerical Methods for Ordinary Differential Systems:
+The Initial Value Problem}.
+John Wiley \& Sons, Chichester, 1991.
+
+\bibitem{lindelof1894}
+E.~Lindelöf,
+``Sur l'application de la méthode des approximations successives
+aux équations différentielles ordinaires du premier ordre,''
+\textit{Comptes rendus de l'Académie des sciences},
+vol.~118, pp.~454--457, 1894.
+
+\bibitem{picard1890}
+{É}.~Picard,
+``Mémoire sur la théorie des équations aux dérivées partielles
+et la méthode des approximations successives,''
+\textit{Journal de Mathématiques Pures et Appliquées},
+vol.~6, pp.~145--210, 1890.
+
+\bibitem{runge1895}
+C.~Runge,
+``Über die numerische {A}uflösung von
+{D}ifferentialgleichungen,''
+\textit{Mathematische Annalen},
+vol.~46, pp.~167--178, 1895.
+
+\bibitem{teschl2012}
+G.~Teschl,
+\textit{Ordinary Differential Equations and Dynamical Systems},
+Graduate Studies in Mathematics, vol.~140.
+American Mathematical Society, Providence, RI, 2012.
+
+\bibitem{barton1971}
+D.~Barton, I.~M.~Willers, and R.~V.~M.~Zahar,
+``The automatic solution of systems of ordinary differential equations by the Taylor series method,''
+\textit{The Computer Journal}, vol.~14, no.~3, pp.~243--248, 1971.
+
+\end{thebibliography}
+
+\end{document}

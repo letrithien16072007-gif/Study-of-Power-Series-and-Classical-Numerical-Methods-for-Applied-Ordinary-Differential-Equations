@@ -1,0 +1,731 @@
+\documentclass[aspectratio=169]{beamer}
+
+% ── Core packages ──────────────────────────────────────────────
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{mathtools}
+\usepackage{bm}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{listings}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+\usepackage{xcolor}
+\usepackage{colortbl}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta}
+
+% ── Math Spacing Adjustments for Beamer ─────────────────────────
+\setlength{\abovedisplayskip}{3pt}
+\setlength{\belowdisplayskip}{3pt}
+\setlength{\abovedisplayshortskip}{1pt}
+\setlength{\belowdisplayshortskip}{1pt}
+
+% ── Macros from paper ──────────────────────────────────────────
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\C}{\mathbb{C}}
+\newcommand{\Rconv}{R_{\mathrm{conv}}}
+\newcommand{\xp}{x_{\mathrm{p}}}
+\newcommand{\OO}{\mathcal{O}}
+\newcommand{\abs}[1]{\left\lvert #1 \right\rvert}
+\newcommand{\norm}[1]{\left\lVert #1 \right\rVert}
+\newcommand{\dd}{\mathrm{d}}
+\newcommand{\eg}{e.g.,\xspace}
+\newcommand{\ie}{i.e.,\xspace}
+
+\newtheorem{proposition}[theorem]{Proposition}
+
+% ── Custom colors (FPT style Navy and Orange) ───────────────────
+\definecolor{primary}{HTML}{1A365D}   % Navy Blue
+\definecolor{secondary}{HTML}{F27125} % Orange
+\definecolor{bglight}{HTML}{F8FAFC}   % Off-white
+\definecolor{textcolor}{HTML}{1E293B} % Dark gray
+\definecolor{success}{HTML}{15803D}   % Green accent for definitions/lemmas
+\definecolor{danger}{HTML}{B91C1C}    % Red accent for warnings/errors
+
+\definecolor{goodcell}{HTML}{C6EFCE}
+\definecolor{warncell}{HTML}{FFEB9C}
+\definecolor{badcell} {HTML}{FFC7CE}
+
+% ── Beamer Theme Customisation ──────────────────────────────────
+\usetheme{default}
+\usecolortheme{default}
+
+\setbeamercolor{structure}{fg=primary}
+\setbeamercolor{titlelike}{bg=primary, fg=white}
+\setbeamercolor{background canvas}{bg=white}
+\setbeamercolor{normal text}{fg=textcolor}
+\setbeamercolor{item}{fg=secondary}
+
+% Title slide color
+\setbeamercolor{title}{bg=primary, fg=white}
+\setbeamercolor{subtitle}{bg=primary, fg=white!80}
+
+% Frame header configuration
+\setbeamertemplate{headline}{}
+\setbeamertemplate{navigation symbols}{}
+
+% Frame footer — page number only, transparent background
+\setbeamercolor{footline}{fg=gray!70, bg=}
+\setbeamertemplate{footline}{%
+  \leavevmode%
+  \hfill%
+  {\usebeamercolor[fg]{footline}\footnotesize\insertframenumber{} / \inserttotalframenumber}%
+  \hspace{18pt}%
+  \vskip4pt%
+}
+
+% Custom blocks
+\setbeamercolor{block title}{bg=primary, fg=white}
+\setbeamercolor{block body}{bg=bglight, fg=textcolor}
+\setbeamertemplate{blocks}[rounded][shadow=false]
+
+% Highlight block (Definition)
+\newenvironment{defblock}[1]{%
+  \setbeamercolor{block title}{bg=success,fg=white}%
+  \setbeamercolor{block body}{bg=success!5!white,fg=textcolor}%
+  \begin{block}{#1}%
+}{%
+  \end{block}%
+}
+
+% Highlight block (Warning/Limitation)
+\newenvironment{warnblock}[1]{%
+  \setbeamercolor{block title}{bg=danger,fg=white}%
+  \setbeamercolor{block body}{bg=danger!5!white,fg=textcolor}%
+  \begin{block}{#1}%
+}{%
+  \end{block}%
+}
+
+% Listings customization for slides
+\lstset{
+  language=C,
+  basicstyle=\ttfamily\tiny,
+  keywordstyle=\color{primary}\bfseries,
+  commentstyle=\color{gray},
+  stringstyle=\color{secondary},
+  frame=single,
+  breaklines=true,
+  showstringspaces=false
+}
+
+% ── Document Metadata ───────────────────────────────────────────
+\title{A Comparative Study of Power Series and Classical Numerical Methods for Applied ODEs}
+\subtitle{Extended Analysis with Padé Rational Approximants for Convergence-Radius Extension}
+\author{Le Tri Thien \quad Nguyen Van Phu}
+\institute{Department of Mathematics, FPT University, Ho Chi Minh City, Vietnam}
+\date{July 2026}
+
+\begin{document}
+
+% ── Slide 1: Title Slide ────────────────────────────────────────
+\begin{frame}[plain]
+  \vfill
+  \begin{centering}
+    \begin{beamercolorbox}[sep=12pt,center,rounded=true,shadow=false]{title}
+      \usebeamerfont{title}{\Large\bfseries \inserttitle}\\[6pt]
+      \usebeamerfont{subtitle}{\small\itshape \insertsubtitle}
+    \end{beamercolorbox}
+    \vskip1.5em
+    {\small \insertauthor}
+    \vskip0.5em
+    {\scriptsize \insertinstitute}
+    \vskip1.5em
+    {\scriptsize \insertdate}
+  \end{centering}
+  \vfill
+  \footnotetext[1]{ODE: Ordinary Differential Equation.}
+\end{frame}
+
+% ── Slide 2: Agenda ─────────────────────────────────────────────
+\begin{frame}{Presentation Agenda}
+  \footnotesize
+  \begin{columns}[T]
+    \begin{column}{0.48\textwidth}
+      \begin{enumerate}
+        \item \textbf{Introduction \& Research Motivation}
+        \item \textbf{Mathematical Foundations \& Solvers}
+        \begin{itemize}
+          \item Picard--Lindelöf \& Power Series
+          \item Numerical Stepping: Euler \& RK4\footnotemark[1]
+          \item Padé Rational Approximants
+        \end{itemize}
+        \item \textbf{Problem Formulation (3 ODE Classes)}
+        \begin{itemize}
+          \item Newton's Cooling (Linear Constant)
+          \item Airy Equation (Linear Variable)
+          \item Logistic Growth (Nonlinear Riccati)
+        \end{itemize}
+      \end{enumerate}
+    \end{column}
+    \begin{column}{0.48\textwidth}
+      \begin{enumerate}
+        \setcounter{enumi}{3}
+        \item \textbf{Complex Singularity \& Divergence}
+        \begin{itemize}
+          \item Complex Poles of Logistic Model
+          \item Cauchy--Hadamard Radius $\Rconv$
+        \end{itemize}
+        \item \textbf{Empirical Benchmarks in C}
+        \begin{itemize}
+          \item Accuracy, Abs Error \& EOC\footnotemark[2]
+          \item Workload \& Runtime Benchmarks
+        \end{itemize}
+        \item \textbf{Extended Padé Domain Extension}
+        \begin{itemize}
+          \item Denominator Rule ($M \geq 2$) \& Shift
+          \item Froissart Doublets \& Work-Precision
+        \end{itemize}
+        \item \textbf{Conclusions \& Future Directions}
+      \end{enumerate}
+    \end{column}
+  \end{columns}
+  \vskip6pt
+  \footnotetext[1]{RK4: 4th-Order Runge--Kutta; \quad $^2$EOC: Experimental Order of Convergence.}
+\end{frame}
+
+% ── Slide 3: Introduction & Motivation ──────────────────────────
+\begin{frame}{1. Introduction \& Research Motivation}
+  \small
+  \begin{columns}[T]
+    \begin{column}{0.48\textwidth}
+      \textbf{Role of ODEs in Modeling:}
+      \begin{itemize}\small
+        \item ODEs model core dynamic systems in physics, biology, and engineering.
+        \item Practical ODEs rarely have closed-form solutions.
+      \end{itemize}
+      \vskip3pt
+      \textbf{Two Analytical Frameworks:}
+      \begin{itemize}\small
+        \item \color{primary}\textbf{Power Series (Taylor):} High-precision local expansion near $x_0$, bounded by complex pole in $\C$.
+        \item \color{secondary}\textbf{Stepping Solvers (Euler, RK4):} Advance step-by-step along real axis; immune to complex poles.
+      \end{itemize}
+    \end{column}
+    \begin{column}{0.48\textwidth}
+      \begin{defblock}{Research Contributions}
+        \begin{itemize}\small
+          \item Empirical benchmarks (error, EOC, runtimes in C) across 3 distinct physical ODE classes.
+          \item Analysis of complex singularities causing Taylor series breakdown.
+          \item \textbf{Extended Contribution:} Order rule ($M \ge 2$), shift condition, and robust Padé approximants extending domain past $\Rconv$.
+        \end{itemize}
+      \end{defblock}
+    \end{column}
+  \end{columns}
+  \vskip4pt
+  \footnotetext[1]{ODE: Ordinary Differential Equation; $\Rconv$: Radius of Convergence.}
+\end{frame}
+
+% ── Slide 4: Mathematical Foundations ──────────────────────────
+\begin{frame}{2. Mathematical Foundations \& Classical Solvers}
+  \small
+  \begin{columns}[T]
+    \begin{column}{0.48\textwidth}
+      \textbf{1. Picard--Lindelöf Theorem\footnotemark[1]:}
+      \begin{itemize}\small
+        \item Unique solution for IVP\footnotemark[5]:
+        $y' = f(x, y), \; y(x_0) = y_0$
+        on $[x_0 - h, x_0 + h]$ for Lipschitz $f$.
+      \end{itemize}
+      \vskip2pt
+      \textbf{2. Power Series Method\footnotemark[2]:}
+      $$y(x) = \sum_{n=0}^{\infty} a_n (x-x_0)^n$$
+      Converges for $|x-x_0| < \Rconv = \liminf_{n\to\infty} |a_n|^{-1/n}$.
+    \end{column}
+    \begin{column}{0.48\textwidth}
+      \textbf{3. Numerical Stepping Solvers:}
+      \begin{itemize}\small
+        \item \color{primary}\textbf{Euler Method\footnotemark[3]:}
+        $y_{n+1} = y_n + h\,f(x_n, y_n)$ \\
+        LTE\footnotemark[6] $\OO(h^2)$, Global error $\OO(h)$.
+        \item \color{secondary}\textbf{RK4 Method\footnotemark[4]:}
+        4 intermediate stage evaluations:
+        $y_{n+1} = y_n + \tfrac{h}{6}(k_1 + 2k_2 + 2k_3 + k_4)$ \\
+        LTE $\OO(h^5)$, Global error $\OO(h^4)$.
+      \end{itemize}
+    \end{column}
+  \end{columns}
+  \vskip4pt
+  \footnotetext[1]{Ref: Picard (1890), Lindelöf (1894); \quad $^2$Coddington \& Levinson (1955); \quad $^3$Euler (1768); \quad $^4$Runge--Kutta (1901), Butcher (1963).}
+  \footnotetext[5]{IVP: Initial Value Problem; \quad $^6$LTE: Local Truncation Error.}
+\end{frame}
+
+% ── Slide 5: Padé Rational Approximants ─────────────────────────
+\begin{frame}{2. Padé Rational Approximants}
+  \small
+  \begin{columns}[T]
+    \begin{column}{0.50\textwidth}
+      \textbf{Definition\footnotemark[1]:}
+      Given Taylor expansion $T(x) = \sum_{n=0}^{N} a_n x^n$, the Padé approximant $[L/M]$ is:
+      $$[L/M](x) = \frac{P_L(x)}{Q_M(x)} = \frac{p_0 + p_1 x + \cdots + p_L x^L}{1 + q_1 x + \cdots + q_M x^M}$$
+      matching $N+1 = L+M+1$ terms at origin:
+      $$P_L(x) - Q_M(x)\,T(x) = \OO(x^{L+M+1})$$
+      \textbf{Construction:} Solve $M \times M$ Hankel system for $q_j$, then compute $p_k = \sum_{j=0}^{\min(k,M)} a_{k-j} q_j$.
+    \end{column}
+    \begin{column}{0.46\textwidth}
+      \begin{defblock}{Stahl's Diagonal Theorem}
+        \footnotemark[2]For fixed $L+M+1$, diagonal $[M/M]$ maximizes the domain of analytic continuation in $\C$.
+      \end{defblock}
+      \vskip3pt
+      \textbf{Key Advantage:} $Q_M(x)$ roots act as pole-absorbers in $\C$, extending domain past $\Rconv$.
+    \end{column}
+  \end{columns}
+  \vskip4pt
+  \footnotetext[1]{Ref: Baker \& Graves-Morris (1996); \quad $^2$Stahl (1997).}
+\end{frame}
+
+% ── Slide 6: Model 1: Newton's Law of Cooling ───────────────────
+\begin{frame}{3. Model 1: Newton's Law of Cooling (Linear, Constant Coeff.)}
+  \small
+  \begin{columns}[T]
+    \begin{column}{0.48\textwidth}
+      \textbf{Physical Model:}
+      Models heat exchange with environment:
+      $$y' = -k(y - T_m), \quad y(0) = y_0$$
+      Parameters: $k = 0.5, T_m = 20, y_0 = 100$.
+      \vskip3pt
+      \textbf{Exact Solution:}
+      $$y(x) = T_m + (y_0 - T_m)e^{-kx} = 20 + 80e^{-0.5x}$$
+    \end{column}
+    \begin{column}{0.48\textwidth}
+      \textbf{Power Series Recurrence:}
+      Substituting $y(x) = \sum_{n=0}^\infty a_n x^n$:
+      $$a_1 = -k(a_0 - T_m), \quad a_{n+1} = \frac{-k\,a_n}{n+1} \; (n \ge 1)$$
+      \begin{defblock}{Convergence Analysis}
+        Exact solution involves entire exponential $e^{-kx}$ (no finite singular poles in $\C$):
+        $$\Rconv = \infty$$
+        Taylor series converges globally for all $x \in \R$.
+      \end{defblock}
+    \end{column}
+  \end{columns}
+  \vskip4pt
+  \footnotetext[1]{ODE: Ordinary Differential Equation; $\Rconv$: Radius of Convergence.}
+\end{frame}
+
+% ── Slide 7: Model 2: Airy Equation ─────────────────────────────
+\begin{frame}{3. Model 2: Airy Equation (Linear, Variable Coeff.)}
+  \small
+  \begin{columns}[T]
+    \begin{column}{0.48\textwidth}
+      \textbf{Physical Model\footnotemark[1]:}
+      Arises in wave propagation and quantum optics:
+      $$y'' - x\,y = 0, \quad y(0) = 1, \; y'(0) = 0$$
+      Solution expressed via Airy special functions $\mathrm{Ai}(x)$ and $\mathrm{Bi}(x)$.
+    \end{column}
+    \begin{column}{0.48\textwidth}
+      \textbf{Power Series Recurrence:}
+      Matching powers of $x$ yields:
+      $$a_2 = 0, \quad a_{n+2} = \frac{a_{n-1}}{(n+1)(n+2)} \; (n \geq 1)$$
+      Surviving terms ($a_{3k}$):
+      $$a_3 = \frac{1}{6}, \quad a_6 = \frac{1}{180}, \quad a_9 = \frac{1}{12960}$$
+      \textbf{Convergence Radius:} $\Rconv = \infty$. Rapid growth for $x>0$ demands $N \gg 20$ far from $x_0=0$.
+    \end{column}
+  \end{columns}
+  \vskip4pt
+  \footnotetext[1]{Ref: Boyce et al. (2017). ODE: Ordinary Differential Equation.}
+\end{frame}
+
+% ── Slide 8: Model 3: Logistic Growth Model ─────────────────────
+\begin{frame}{3. Model 3: Logistic Growth (Nonlinear, Riccati-type)}
+  \small
+  \begin{columns}[T]
+    \begin{column}{0.48\textwidth}
+      \textbf{Biological Model:}
+      Population growth with carrying capacity $K$:
+      $$y' = r\,y\left(1 - \frac{y}{K}\right), \quad y(0) = y_0$$
+      Parameters: $r = 1, K = 100, y_0 = 10$.
+      \vskip3pt
+      \textbf{Exact Solution:}
+      $$y(x) = \frac{K y_0}{y_0 + (K - y_0)e^{-rx}} = \frac{1000}{10 + 90e^{-x}}$$
+    \end{column}
+    \begin{column}{0.48\textwidth}
+      \textbf{Team Derivation (Cauchy Product):}
+      Expanding $y^2 = \sum c_n x^n$ ($c_n = \sum_{k=0}^n a_k a_{n-k}$):
+      $$a_{n+1} = \frac{r}{n+1}\left(a_n - \frac{c_n}{K}\right) \quad (n \ge 0)$$
+      \begin{warnblock}{Computational Complexity}
+        \footnotemark[1]Cauchy product costs $\OO(n)$ per term, raising series construction cost to $\OO(N^2)$ (vs $\OO(N)$ for linear ODEs).
+      \end{warnblock}
+    \end{column}
+  \end{columns}
+  \vskip4pt
+  \footnotetext[1]{Ref: Corliss \& Chang (1982). ODE: Ordinary Differential Equation.}
+\end{frame}
+
+% ── Slide 9: Complex Singularity Analysis ───────────────────────
+\begin{frame}{4. Complex Singularity Analysis \& Divergence Limit}
+  \small
+  \begin{columns}[T]
+    \begin{column}{0.48\textwidth}
+      \textbf{Team Proof (Singularity Locations):}
+      Denominator $10 + 90e^{-x} = 0 \implies e^{-x} = -1/9$.
+      Complex logarithm yields infinite branch of poles:
+      $$x_p^{(n)} = \ln 9 - i\pi(2n+1), \quad n \in \mathbb{Z}$$
+      Nearest pole pair to origin $x_0 = 0$ ($n=0, -1$):
+      $$x_p = \ln 9 \pm i\pi \approx 2.197 \pm 3.142i$$
+    \end{column}
+    \begin{column}{0.48\textwidth}
+      \begin{defblock}{Cauchy--Hadamard Radius $\Rconv$}
+        Euclidean distance from $x_0 = 0$ to nearest pole $x_p$:
+        $$\boxed{\Rconv = |x_p| = \sqrt{\ln^2 9 + \pi^2} \approx 3.834}$$
+      \end{defblock}
+      \vskip2pt
+      \begin{warnblock}{Critical Consequence}
+        Taylor series expanded at $x_0=0$ is \textbf{guaranteed to diverge} at $x = 5.0 > \Rconv \approx 3.834$.
+      \end{warnblock}
+    \end{column}
+  \end{columns}
+  \vskip4pt
+  \footnotetext[1]{$\Rconv$: Radius of Convergence; \quad $x_p$: Complex Singularity Pole.}
+\end{frame}
+
+% ── Slide 10: Complex Plane Visualization ───────────────────────
+\begin{frame}{4. Complex-Plane Geometry Visualization}
+  \small
+  \begin{columns}[T]
+    \begin{column}{0.48\textwidth}
+      \textbf{Geometric Feature Analysis in $\C$:}
+      \begin{itemize}\small
+        \item \color{primary}\textbf{Expansion Origin:} $x_0 = 0$.
+        \item \color{danger}\textbf{Conjugate Pole Pair:} $x_p \approx 2.20 \pm 3.14i$ ($\times$).
+        \item \color{primary}\textbf{Convergence Circle:} Radius $R \approx 3.834$.
+        \item \color{secondary}\textbf{Target Point:} $x_{\text{eval}} = 5.0$ lies outside convergence circle.
+      \end{itemize}
+      \vskip2pt
+      $\implies$ Taylor series at $x=5.0$ diverges for all $N$.
+    \end{column}
+
+    \begin{column}{0.48\textwidth}
+      \centering
+      \begin{tikzpicture}[scale=0.52, >=Stealth]
+        \draw[lightgray!50, very thin, step=1] (-1,-4.0) grid (6.0,4.0);
+        \draw[->, thick] (-1.2,0) -- (6.0,0) node[right, scale=0.7] {Re$(x)$};
+        \draw[->, thick] (0,-4.0) -- (0,4.0) node[above, scale=0.7] {Im$(x)$};
+
+        \fill (0,0) circle (2pt);
+        \node[below left, scale=0.7] at (0,0) {$x_0=0$};
+
+        \draw[dashed, primary, thick] (0,0) circle (3.834);
+        \node[primary, above left, scale=0.65] at (-2.1, 2.1) {$\Rconv \approx 3.83$};
+
+        \draw[red, very thick] (2.197-0.15, 3.142-0.15) -- (2.197+0.15, 3.142+0.15);
+        \draw[red, very thick] (2.197-0.15, 3.142+0.15) -- (2.197+0.15, 3.142-0.15);
+        \draw[red, very thick] (2.197-0.15, -3.142-0.15) -- (2.197+0.15, -3.142+0.15);
+        \draw[red, very thick] (2.197-0.15, -3.142+0.15) -- (2.197+0.15, -3.142-0.15);
+
+        \node[right, danger, scale=0.65] at (2.2, 3.2) {$x_p \approx 2.20 + 3.14i$};
+        \node[right, danger, scale=0.65] at (2.2, -3.2) {$x_p \approx 2.20 - 3.14i$};
+
+        \draw[->, gray, dashed, thin] (0,0) -- (2.197, 3.142);
+
+        \fill[secondary] (5,0) circle (2pt);
+        \node[below, secondary, scale=0.7] at (5, -0.1) {$x_{\text{eval}} = 5.0$};
+
+        \draw[danger, thick, <->] (3.834, 0) -- (5.6, 0) node[midway, above, scale=0.6, text=danger] {Divergence};
+      \end{tikzpicture}
+    \end{column}
+  \end{columns}
+  \vskip4pt
+  \footnotetext[1]{Re: Real Axis; Im: Imaginary Axis; $\C$: Complex Plane.}
+\end{frame}
+
+% ── Slide 11: Catastrophic Taylor Divergence ────────────────────
+\begin{frame}{4. Catastrophic Divergence of Taylor Polynomials}
+  \small
+  \begin{columns}[T]
+    \begin{column}{0.50\textwidth}
+      \textbf{Evaluation at $x = 5.0 > \Rconv \approx 3.834$:}
+      \begin{itemize}\small
+        \item Exact solution: $y(5.0) \approx 94.2826$
+        \item Taylor error explodes as degree $N$ grows:
+      \end{itemize}
+      \vskip2pt
+      \centering
+      \scriptsize
+      \begin{tabular}{crr}
+        \toprule
+        Degree $N$ & Computed Value & Abs.\ Error \\
+        \midrule
+        $N=5$  & $45.625$ & $48.66$ \\
+        $N=10$ & $937.594$ & $843.31$ \\
+        $N=20$ & $-11{,}060.000$ & $> 11{,}000$ (catastrophic) \\
+        \bottomrule
+      \end{tabular}
+    \end{column}
+    \begin{column}{0.46\textwidth}
+      \begin{warnblock}{Nature of Failure}
+        \footnotemark[1]Divergence is an inherent mathematical limit of complex analysis, not a software bug.
+      \end{warnblock}
+      \vskip2pt
+      \textbf{Stepping Solvers Contrast:} Real-axis solvers (Euler, RK4) advance locally without crossing complex poles, reaching $y(5.0) \approx 94.2826$ with error $7 \times 10^{-10}$ (RK4, $h=0.01$).
+    \end{column}
+  \end{columns}
+  \vskip4pt
+  \footnotetext[1]{Ref: Coddington \& Levinson (1955). Bounded real solutions can have finite complex radii.}
+\end{frame}
+
+% ── Slide 12: Benchmark Accuracy Table ──────────────────────────
+\begin{frame}{5. Empirical Benchmarks: Accuracy at $x = 5.0$}
+  \centering
+  \scriptsize
+  \setlength{\tabcolsep}{6pt}
+  \renewcommand{\arraystretch}{1.1}
+  \begin{tabular}{llrr}
+    \toprule
+    \textbf{Model / Solver} & \textbf{Configuration} & \textbf{Value at $x=5.0$} & \textbf{Abs.\ Error}\\
+    \midrule
+    \textbf{Newton's Cooling} (Exact: $26.5668$) & & & \\
+    \quad Euler & $h=0.1$  & $26.1556$ & $4.11\times10^{-1}$ \\
+    \quad Euler & $h=0.01$ & $26.5257$ & $4.11\times10^{-2}$ \\
+    \quad RK4   & $h=0.1$  & $26.5668$ & $8.91\times10^{-7}$ \\
+    \quad RK4   & $h=0.01$ & $26.5668$ & $8.58\times10^{-11}$ \\
+    \quad Taylor Series & $N=20$ & $26.5668$ & $3.20\times10^{-10}$ \\
+    \midrule
+    \textbf{Airy Equation} (Reference $N=100$: $534.854$) & & & \\
+    \quad Euler & $h=0.01$ & $497.418$ & $37.44$ \\
+    \quad RK4   & $h=0.01$ & $534.854$ & $3.53\times10^{-6}$ \\
+    \quad Taylor Series & $N=20$ & $521.704$ & $13.15$ \\
+    \midrule
+    \textbf{Logistic Growth} (Exact: $94.2826$) & & & \\
+    \quad Euler & $h=0.01$ & $94.2964$ & $1.39\times10^{-2}$ \\
+    \quad RK4   & $h=0.01$ & $94.2826$ & $7.15\times10^{-10}$ \\
+    \quad Taylor Series & $N=20$ & \color{danger}$-11{,}060$ & \color{danger}$>11{,}000$ \\
+    \bottomrule
+  \end{tabular}
+  \vskip4pt
+  \footnotetext[1]{RK4: 4th-Order Runge--Kutta; Abs Error: Absolute Error $|y_{\text{approx}} - y_{\text{exact}}|$.}
+\end{frame}
+
+% ── Slide 13: EOC & Execution Runtime Benchmarks ────────────────
+\begin{frame}{5. Experimental Order of Convergence (EOC) \& C Runtimes}
+  \small
+  \begin{columns}[T]
+    \begin{column}{0.46\textwidth}
+      \textbf{EOC Formulation\footnotemark[1]:}
+      $$\mathrm{EOC} = \frac{\log(E_{h_1}/E_{h_2})}{\log(h_1/h_2)} \quad (h_1=0.1, h_2=0.01)$$
+      \centering
+      \vskip2pt
+      \scriptsize
+      \setlength{\tabcolsep}{4pt}
+      \begin{tabular}{lcc}
+        \toprule
+        \textbf{Model} & \textbf{EOC (Euler)} & \textbf{EOC (RK4)} \\
+        \midrule
+        Newton's Cooling & $1.00$ & $3.95$ \\
+        Airy Equation    & $0.84$ & $3.94$ \\
+        Logistic Growth  & $1.01$ & $4.02$ \\
+        \bottomrule
+      \end{tabular}
+      \vskip2pt
+      \raggedright
+      \scriptsize
+      Euler Airy EOC ($0.84 < 1$) is due to exponential growth amplifying error.
+    \end{column}
+    \begin{column}{0.51\textwidth}
+      \textbf{C Language Benchmark Runtimes ($\mu s$)\footnotemark[2]:}\\
+      {\scriptsize Lenovo ThinkBook 14 G7+, AMD AI 7 H 350, GCC \texttt{-O2}}
+      \centering
+      \vskip2pt
+      \scriptsize
+      \setlength{\tabcolsep}{3pt}
+      \begin{tabular}{lccc}
+        \toprule
+        \textbf{Model} & \textbf{Euler} & \textbf{RK4} & \textbf{Series} \\
+        \midrule
+        Newton's Cooling & $12.13\,\mu s$ & $54.32\,\mu s$ & $1.88\,\mu s$ \\
+        Airy Equation    & $21.03\,\mu s$ & $63.77\,\mu s$ & $1.38\,\mu s$ \\
+        Logistic Growth  & $24.99\,\mu s$ & $103.33\,\mu s$ & $11.54\,\mu s$ \\
+        \bottomrule
+      \end{tabular}
+      \vskip2pt
+      \raggedright
+      \scriptsize
+      \textbf{Sparse Evaluation\footnotemark[3]:} Series is $6\times$--$40\times$ faster when evaluating sparse points.
+    \end{column}
+  \end{columns}
+  \vskip4pt
+  \footnotetext[1]{Ref: Hairer et al. (1993). EOC: Experimental Order of Convergence.}
+  \footnotetext[2]{Hardware: Lenovo ThinkBook 14 G7+ AKP, AMD AI 7 H 350, Fedora 44, GCC -O2.}
+  \footnotetext[3]{Ref: Barrio (2005).}
+\end{frame}
+
+% ── Slide 14: Extended Contribution: M >= 2 Rule ────────────────
+\begin{frame}{6. Extended Contribution: Order Selection Rule $M \geq 2$}
+  \small
+  \begin{columns}[T]
+    \begin{column}{0.48\textwidth}
+      \textbf{Research Problem:}
+      How to choose Padé denominator degree $M$ from known singularity structure?
+      \begin{lemma}[Team Proof: $M \ge 2$ Necessity]
+        \footnotemark[1]If nearest singularity of $y(x)$ is complex pair $x_p = \alpha \pm i\beta$ ($\beta \neq 0$), denominator $Q_M(x) \in \R[x]$ must have $M \geq 2$.
+      \end{lemma}
+      \textbf{Proof Sketch:}
+      Real $Q_1(x) = 1 + q_1 x$ has 1 real root, cannot absorb complex pair $\alpha \pm i\beta$. Quadratic $Q_2(x) = x^2 - 2\alpha x + (\alpha^2 + \beta^2)$ has exact roots $\alpha \pm i\beta$. Thus $M \ge 2$.
+    \end{column}
+    \begin{column}{0.48\textwidth}
+      \textbf{Padé $[L/M]$ Abs Error Matrix at $x=5.0$ ($x_0=0$):}
+      \centering
+      \vskip2pt
+      \scriptsize
+      \setlength{\tabcolsep}{3pt}
+      \begin{tabular}{c|ccccccc}
+        \toprule
+        $L \backslash M$ & $1$ & $2$ & $3$ & $4$ & $5$ & $6$ & $7$ \\
+        \midrule
+        1 & \cellcolor{badcell}$129.3$ & \cellcolor{warncell}$80.4$ & \cellcolor{badcell}$111.4^\dagger$ & \cellcolor{warncell}$80.4$ & \cellcolor{badcell}$123.1$ & \cellcolor{warncell}$68.9$ & \cellcolor{badcell}$279.8$ \\
+        2 & \cellcolor{badcell}$2121$ & \cellcolor{warncell}$42.7$ & \cellcolor{badcell}$245.7^\dagger$ & \cellcolor{warncell}$32.1$ & \cellcolor{warncell}$43.0$ & \cellcolor{warncell}$13.5$ & \cellcolor{warncell}$8.11$ \\
+        3 & \cellcolor{badcell}$124.2$ & \cellcolor{warncell}$9.96$ & \cellcolor{warncell}$11.3$ & \cellcolor{warncell}$5.48$ & \cellcolor{warncell}$3.02$ & \cellcolor{warncell}$1.30$ & \cellcolor{goodcell}$0.537$ \\
+        4 & \cellcolor{badcell}$138.4$ & \cellcolor{warncell}$1.82$ & \cellcolor{warncell}$2.30^\dagger$ & \cellcolor{goodcell}$0.822$ & \cellcolor{goodcell}$0.348$ & \cellcolor{goodcell}$0.132$ & \cellcolor{goodcell}$0.046$ \\
+        5 & \cellcolor{badcell}$597.3$ & \cellcolor{warncell}$2.28$ & \cellcolor{warncell}$1.90$ & \cellcolor{goodcell}$0.102$ & \cellcolor{goodcell}$0.046$ & \cellcolor{goodcell}$0.015$ & \cellcolor{goodcell}$0.0045$ \\
+        \bottomrule
+      \end{tabular}
+      \vskip2pt
+      \raggedright
+      \tiny
+      Colors: \colorbox{badcell}{Red} $>100$; \colorbox{warncell}{Yellow} $1 \to 100$; \colorbox{goodcell}{Green} $<1$. $\dagger$ doublet.
+      \vskip2pt
+      \scriptsize
+      Column $M=1$ is uniformly red (large error), proving Lemma 5.1 without exception.
+    \end{column}
+  \end{columns}
+  \vskip4pt
+  \footnotetext[1]{Team Analytical Proof. $Q_M(x)$ needs $M \ge 2$ to absorb conjugate pole pair $\alpha \pm i\beta$.}
+\end{frame}
+
+% ── Slide 15: Expansion-Point Shift Condition ───────────────────
+\begin{frame}{6. Closed-Form Expansion-Point Shift Condition}
+  \small
+  \begin{columns}[T]
+    \begin{column}{0.50\textwidth}
+      \begin{proposition}[Team Proof: Shift Condition]
+        \footnotemark[1]Radius from shifted origin $x_0$ is $R'(x_0) = \sqrt{(\ln 9 - x_0)^2 + \pi^2}$.
+        For target $x_{\mathrm{eval}} = 5.0$, condition $|5.0 - x_0| < R'(x_0)$ is equivalent to:
+        $$\boxed{x_0 > \frac{25 - \ln^2 9 - \pi^2}{2(5 - \ln 9)} \approx 1.838}$$
+      \end{proposition}
+      \textbf{Proof Sketch:}
+      Squaring $(5 - x_0) < \sqrt{(\ln 9 - x_0)^2 + \pi^2}$ yields:
+      $25 - 10x_0 < \ln^2 9 - 2x_0\ln 9 + \pi^2 \iff x_0 > 1.838$.
+    \end{column}
+    \begin{column}{0.46\textwidth}
+      \textbf{Padé $[3/3](5.0)$ Error vs Shift $x_0$:}
+      \centering
+      \vskip2pt
+      \scriptsize
+      \setlength{\tabcolsep}{4pt}
+      \begin{tabular}{cccc}
+        \toprule
+        $x_0$ & $y(x_0)$ & $[3/3](5.0)$ & Abs.\ Error \\
+        \midrule
+        $0.0$ & $10.000$ & $105.625$ & $11.342$ \\
+        $1.0$ & $23.197$ & $95.877$  & $1.595$ \\
+        \rowcolor{goodcell!50}
+        $2.0$ & $45.085$ & $94.447$  & $0.164$ \\
+        \rowcolor{goodcell!50}
+        $2.5$ & $57.512$ & $94.324$  & $0.041$ \\
+        \rowcolor{goodcell!50}
+        $3.0$ & $69.057$ & $94.291$  & $0.008$ \\
+        \bottomrule
+      \end{tabular}
+      \vskip2pt
+      \raggedright
+      \scriptsize
+      \textbf{Impact:} Shifting $x_0$ to $3.0$ reduces $[3/3]$ error by \textbf{1,422$\times$} with same 7 Taylor coefficients!
+    \end{column}
+  \end{columns}
+  \vskip4pt
+  \footnotetext[1]{Team Analytical Proof. Condition $|5.0 - x_0| < R'(x_0)$ yields $x_0 > 1.838$.}
+\end{frame}
+
+% ── Slide 16: Froissart Doublets & Work-Precision Analysis ──────
+\begin{frame}{6. Froissart Doublets \& Work-Precision Analysis}
+  \small
+  \begin{columns}[T]
+    \begin{column}{0.48\textwidth}
+      \textbf{1. Froissart Doublets\footnotemark[1]:}
+      \begin{itemize}\small
+        \item Note $[2/3]$ (error $245.7$) is worse than $[2/2]$ (error $42.7$).
+        \item Caused by spurious pole-zero pairs from ill-conditioned Hankel solve.
+        \item \textbf{Remedy:} Robust SVD-Padé / AAA\footnotemark[3] filter doublets automatically.
+      \end{itemize}
+    \end{column}
+    \begin{column}{0.48\textwidth}
+      \textbf{2. Work-Precision Comparison\footnotemark[2]:}
+      \centering
+      \vskip2pt
+      \scriptsize
+      \setlength{\tabcolsep}{4pt}
+      \begin{tabular}{llcc}
+        \toprule
+        \textbf{Method} & \textbf{Config} & \textbf{\# Coeffs} & \textbf{Abs Error} \\
+        \midrule
+        Taylor & $N = 12$ & 13 & $906.1$ (Divergent) \\
+        Padé   & $[6/6]$  & 13 & $1.85 \times 10^{-3}$ \\
+        Padé   & $[8/8]$  & 17 & $1.30 \times 10^{-6}$ \\
+        \bottomrule
+      \end{tabular}
+      \vskip2pt
+      \raggedright
+      \scriptsize
+      \textbf{Flop Comparison:} Single eval at $x=5.0$: Padé $[6/6]$ ($\approx 313$ flops) vs RK4 ($\approx 10,000$ flops).
+    \end{column}
+  \end{columns}
+  \vskip4pt
+  \footnotetext[1]{Ref: Gonnet, Güttel \& Trefethen (2013).}
+  \footnotetext[2]{Flop Comparison: Padé $[6/6]$ ($\approx 313$ flops) vs RK4 ($\approx 10,000$ flops) for single target point.}
+  \footnotetext[3]{SVD: Singular Value Decomposition; AAA: Adaptive Antoulas--Anderson.}
+\end{frame}
+
+% ── Slide 17: Algorithm 1 Selection Procedure ───────────────────
+\begin{frame}{6. Proposed Algorithm 1 (Padé Order Selection)}
+  \centering
+  \begin{minipage}{0.95\textwidth}
+    \begin{algorithm}[H]
+      \tiny
+      \caption{Automated Padé Order Selection from Singularity Structure}
+      \begin{algorithmic}[1]
+        \Require ODE $y' = f(x,y)$, initial condition $y(x_0)=y_0$, evaluation point $x_{\mathrm{eval}}$, tolerance $\varepsilon$.
+        \State \textbf{Step 1:} Solve denominator of exact solution in $\C$ to find nearest singularity $x_p$.
+        \State \textbf{Step 2:} Compute convergence radius $\Rconv = |x_p - x_0|$.
+        \If{$|x_{\mathrm{eval}} - x_0| \leq \Rconv$}
+          \State \textbf{Return} Standard Taylor series. \textbf{Stop.}
+        \EndIf
+        \State \textbf{Step 3:} Count conjugate pole pairs $n_p$; set minimum denominator degree $M_{\min} = 2 n_p$.
+        \State \textbf{Step 4:} Check expansion shift condition $|x_{\mathrm{eval}} - x_0| < R'(x_0)$.
+        \If{$\exists\, x_0^* > x_0$ satisfying shift condition}
+          \State Compute $y(x_0^*)$ via RK4; re-expand at $x_0^*$; evaluate Padé $[M_{\min}/M_{\min}]$.
+        \Else
+          \State Evaluate at $x_0$; increase $M \ge M_{\min}$ until $|[M/M] - [(M{-}1)/(M{-}1)]| < \varepsilon$.
+        \EndIf
+        \State \textbf{Return} Selected Padé rational approximant.
+      \end{algorithmic}
+    \end{algorithm}
+  \end{minipage}
+  \vskip4pt
+  \footnotetext[1]{Algorithm 1: Automated Padé Order Selection from Singularity Structure.}
+\end{frame}
+
+% ── Slide 18: Conclusions & Future Work ─────────────────────────
+\begin{frame}{7. Conclusions \& Future Work}
+  \small
+  \begin{columns}[T]
+    \begin{column}{0.48\textwidth}
+      \textbf{Principal Conclusions:}
+      \begin{enumerate}\small
+        \item \textbf{Linear ODEs (Newton, Airy):} Taylor converges ($\Rconv=\infty$), $6\times$--$40\times$ faster than RK4 for sparse evaluation.
+        \item \textbf{Nonlinear ODEs (Logistic):} Series breaks down due to complex poles $x_p \approx 2.20 \pm 3.14i$ past $x > 3.834$.
+        \item \textbf{Padé Approximants:} $M \geq 2$ absorbs poles. Shift $x_0 > 1.838$ cuts error by $1,422\times$.
+      \end{enumerate}
+    \end{column}
+    \begin{column}{0.48\textwidth}
+      \textbf{Future Directions:}
+      \begin{itemize}\small
+        \item \textbf{SVD-based Robust Padé in C:} Implement Gonnet--Güttel--Trefethen SVD algorithm to filter doublets.
+        \item \textbf{Higher-Dimensional Systems:} Extend $M \ge 2n_p$ to systems with multiple pole pairs.
+        \item \textbf{Stiff ODE Extensions:} Investigate A-stability of Padé approximants vs implicit solvers.
+        \item \textbf{Algorithmic Complexity Comparison:} Reimplement and evaluate Algorithm 1's structural complexity against existing ODE solvers in the literature.
+      \end{itemize}
+    \end{column}
+  \end{columns}
+  \vskip4pt
+  \footnotetext[1]{ODE: Ordinary Differential Equation; SVD: Singular Value Decomposition.}
+\end{frame}
+
+\end{document}

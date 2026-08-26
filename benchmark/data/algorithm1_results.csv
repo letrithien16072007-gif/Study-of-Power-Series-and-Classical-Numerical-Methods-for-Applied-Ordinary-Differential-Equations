@@ -1,0 +1,13 @@
+Step,Description,Value
+1,Singularity_alpha,2.197225
+1,Singularity_beta,3.141593
+2,R_conv,3.833719
+4,M_min,2
+5,x0_threshold,1.837928
+6,Pade_2_2,51.538462
+6,Pade_3_3,105.625000
+6,Pade_4_4,93.460208
+6,Pade_5_5,94.328811
+6,Pade_6_6,94.280710
+6,Pade_7_7,94.282618
+6,Pade_8_8,94.282561

@@ -1,0 +1,15 @@
+Model,Method,Config,Value,AbsError,DecisionNote
+Newton,Euler,h=0.10,26.155598,4.112019e-01,N/A
+Newton,Euler,h=0.01,26.525749,4.105097e-02,N/A
+Newton,RK4,h=0.10,26.566801,8.914540e-07,N/A
+Newton,RK4,h=0.01,26.566800,8.584777e-11,N/A
+Newton,Series,N=20,26.566800,3.195488e-10,N/A
+Newton,Algorithm1,Auto,26.566800,3.195488e-10,"Kept Taylor Series N=20 (R_conv = inf >= |x-x0|=5.00)"
+Airy,Euler,h=0.01,497.417727,3.743652e+01,N/A
+Airy,RK4,h=0.01,534.854240,3.383627e-06,N/A
+Airy,Series,N=20,521.703801,1.315044e+01,N/A
+Airy,Algorithm1,Auto,521.703801,1.315044e+01,"Kept Taylor Series N=20 (R_conv = inf >= |x-x0|=5.00)"
+Logistic,Euler,h=0.01,94.296420,1.385859e-02,N/A
+Logistic,RK4,h=0.01,94.282562,7.146070e-10,N/A
+Logistic,Series,N=20,-11059.858400,1.115414e+04,N/A
+Logistic,Algorithm1,Tol=1.000000e-04,94.282561,1.298532e-06,"Switched to Padé [8/8] (|x-x0|=5.00 > R_conv=3.8337)"
